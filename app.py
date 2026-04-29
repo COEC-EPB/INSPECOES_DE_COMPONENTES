@@ -204,11 +204,12 @@ def processar():
         df_final = df_final[ordem_existente]
 
         # 🔹 EXPORTAR
-        output = "resultado.xlsx"
-        df_final.to_excel(output, index=False)
-
+        output = "resultado.csv"
+        df_final.to_csv(output, index=False)
+        
         return send_file(output, as_attachment=True)
 
+        
     except Exception as e:
         print("ERRO:", str(e))
         return jsonify({"erro": str(e)}), 500
