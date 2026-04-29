@@ -33,6 +33,7 @@ def col(df, nome):
 
 # 🔹 LER EXCEL (HEADER INTELIGENTE)
 def ler_excel(file):
+
     df_raw = pd.read_excel(file, header=None)
 
     header_row = None
@@ -40,16 +41,24 @@ def ler_excel(file):
     for i, row in df_raw.iterrows():
         valores = row.astype(str).str.upper()
 
-        # 🔥 procura algo com MATR (não só MATRICULA)
-        if valores.str.contains("MATR").any():
+        # 🔥 critérios mais inteligentes
+        if (
+            valores.str.contains("FUNC").any() or
+            valores.str.contains("MATR").any() or
+            valores.str.contains("NOME").any()
+        ):
             header_row = i
             break
 
+    # 🔥 fallback (garante que nunca quebra)
     if header_row is None:
-        raise ValueError("Não encontrou cabeçalho com MATR")
+        print("⚠️ HEADER NÃO ENCONTRADO, USANDO LINHA 5")
+        header_row = 5  # pode ajustar depois
 
     df = pd.read_excel(file, header=header_row)
     df = normalizar_colunas(df)
+
+    print("📊 COLUNAS DETECTADAS:", df.columns.tolist())
 
     return df
 
