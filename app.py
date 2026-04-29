@@ -2,6 +2,7 @@ from flask import Flask, request, send_file, jsonify
 from flask_cors import CORS
 import pandas as pd
 import unicodedata
+import io
 
 app = Flask(__name__)
 CORS(app)
@@ -203,11 +204,18 @@ def processar():
         ordem_existente = [c for c in ordem if c in df_final.columns]
         df_final = df_final[ordem_existente]
 
-        # 🔹 EXPORTAR
-        output = "resultado.csv"
-        df_final.to_csv(output, index=False)
+        output = io.BytesIO()
+
+        df_final.to_excel(output, index=False)
         
-        return send_file(output, as_attachment=True)
+        output.seek(0)
+        
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name="resultado.xlsx",
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 
         
     except Exception as e:
