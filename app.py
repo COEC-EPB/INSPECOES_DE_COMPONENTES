@@ -139,10 +139,29 @@ def processar():
         df = df_meses.merge(df_ipeo, on=["MATRICULA", "MES"], how="inner")
 
         # 🔹 AGRUPAMENTO FINAL
-        df_final = df.groupby(
-            ["EMPRESA", "MES", "REGIONAL", "POLO", "MATRICULA", "NOME"],
-            as_index=False
-        ).mean(numeric_only=True)
+       def get(nome):
+    return col(df, nome)
+
+    col_empresa = get("EMPRESA")
+    col_regional = get("REGIONAL")
+    col_polo = get("POLO")
+    
+    colunas_grupo = [
+        col_empresa,
+        "MES",
+        col_regional,
+        col_polo,
+        "MATRICULA",
+        "NOME"
+    ]
+    
+    # remove None
+    colunas_grupo = [c for c in colunas_grupo if c is not None]
+    
+    if len(colunas_grupo) < 3:
+        return jsonify({"erro": "Colunas essenciais não encontradas após merge"}), 400
+    
+    df_final = df.groupby(colunas_grupo, as_index=False).mean(numeric_only=True)
 
         # 🔹 EXPORTAR
         output = "resultado.xlsx"
