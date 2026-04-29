@@ -81,7 +81,7 @@ async function enviar() {
   try {
     status.innerText = "⏳ Processando...";
 
-    const res = await fetch("https://meu-backend-w0ao.onrender.com/processar", {
+    const res = await fetch("https://servi-os-online-production.up.railway.app/processar", {
       method: "POST",
       body: formData
     });
