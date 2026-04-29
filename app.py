@@ -41,24 +41,25 @@ def ler_excel(file):
     for i, row in df_raw.iterrows():
         valores = row.astype(str).str.upper()
 
-        # 🔥 critérios mais inteligentes
+        # 🔥 procurar linha real de cabeçalho
         if (
-            valores.str.contains("FUNC").any() or
-            valores.str.contains("MATR").any() or
-            valores.str.contains("NOME").any()
+            valores.str.contains("FUNCIONARIO").any() or
+            valores.str.contains("NOME FUNCIONARIO").any()
         ):
             header_row = i
             break
 
-    # 🔥 fallback (garante que nunca quebra)
+    # fallback
     if header_row is None:
-        print("⚠️ HEADER NÃO ENCONTRADO, USANDO LINHA 5")
-        header_row = 5  # pode ajustar depois
+        print("⚠️ NÃO ACHOU HEADER → usando linha 1")
+        header_row = 1
 
     df = pd.read_excel(file, header=header_row)
+
     df = normalizar_colunas(df)
 
-    print("📊 COLUNAS DETECTADAS:", df.columns.tolist())
+    print("✅ HEADER USADO:", header_row)
+    print("📊 COLUNAS:", df.columns.tolist())
 
     return df
 
