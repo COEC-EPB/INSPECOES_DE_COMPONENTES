@@ -24,7 +24,7 @@ def normalizar_colunas(df):
     return df
 
 
-# 🔹 ENCONTRAR COLUNA APROXIMADA
+# 🔹 BUSCAR COLUNA FLEXÍVEL
 def col(df, nome):
     nome = nome.upper()
     for c in df.columns:
@@ -33,21 +33,19 @@ def col(df, nome):
     return None
 
 
-# 🔹 LER EXCEL (HEADER INTELIGENTE)
+# 🔹 LER EXCEL
 def ler_excel(file):
     df_raw = pd.read_excel(file, header=None)
 
     header_row = None
 
     for i, row in df_raw.iterrows():
-        valores = row.astype(str).str.upper()
-
-        if valores.str.contains("FUNCIONARIO").any():
+        if row.astype(str).str.upper().str.contains("FUNCIONARIO").any():
             header_row = i
             break
 
     if header_row is None:
-        header_row = 2  # fallback
+        header_row = 2
 
     df = pd.read_excel(file, header=header_row)
     df = normalizar_colunas(df)
@@ -87,26 +85,19 @@ def padronizar_chaves(df):
     return df
 
 
-# 🔥 LIMPAR E CONVERTER NUMÉRICOS
-def converter_numericos(df):
-    colunas_numericas = [
-        "UTILIZACAO", "PRODUTIVIDADE", "EFICIENCIA", "TMS",
-        "DI", "ROE", "RNT", "IOC", "ISF", "ROV", "IPEO"
-    ]
-
-    for col_num in colunas_numericas:
-        col_real = col(df, col_num)
-
-        if col_real:
-            df[col_real] = (
-                df[col_real]
+# 🔥 LIMPAR NUMÉRICOS (REMOVE % E VÍRGULA)
+def limpar_numericos(df):
+    for c in df.columns:
+        if df[c].dtype == "object":
+            df[c] = (
+                df[c]
                 .astype(str)
                 .str.replace("%", "", regex=False)
                 .str.replace(",", ".", regex=False)
                 .str.strip()
             )
-
-            df[col_real] = pd.to_numeric(df[col_real], errors="coerce")
+            # tenta converter
+            df[c] = pd.to_numeric(df[c], errors="ignore")
 
     return df
 
@@ -146,72 +137,57 @@ def processar():
         df_meses = padronizar_chaves(df_meses)
         df_ipeo = padronizar_chaves(df_ipeo)
 
-        # 🔥 CONVERSÃO CORRETA
-        df_meses = converter_numericos(df_meses)
-        df_ipeo = converter_numericos(df_ipeo)
-
-        df = df_meses.merge(df_ipeo, on=["MATRICULA", "MES"], how="inner")
+        df = pd.merge(df_meses, df_ipeo, on=["MATRICULA", "MES"], how="inner")
 
         if df.empty:
             return jsonify({"erro": "Merge vazio"}), 400
 
-        def get(nome):
-            return col(df, nome)
+        # 🔥 LIMPAR NÚMEROS
+        df = limpar_numericos(df)
 
+        # 🔹 COLUNAS DE AGRUPAMENTO
         colunas_grupo = [
-            get("EMPRESA"),
+            col(df, "EMPRESA"),
             "MES",
-            get("REGIONAL"),
-            get("PRESTADOR"),
-            get("POLO"),
+            col(df, "REGIONAL"),
+            col(df, "PRESTADOR"),
+            col(df, "POLO"),
             "MATRICULA",
-            get("NOME")
+            col(df, "NOME")
         ]
 
         colunas_grupo = [c for c in colunas_grupo if c]
 
-        df_final = df.groupby(colunas_grupo, as_index=False).agg({
-            "UTILIZACAO": "mean",
-            "PRODUTIVIDADE": "mean",
-            "EFICIENCIA": "mean",
-            "TMS": "mean",
-            "DI": "mean",
-            "ROE": "mean",
-            "RNT": "mean",
-            "IOC": "mean",
-            "ISF": "mean",
-            "ROV": "mean",
-            "IPEO": "mean"
-        })
+        # 🔥 AGG DINÂMICO (NUNCA MAIS QUEBRA)
+        agg_dict = {}
+
+        for c in df.columns:
+            if c in colunas_grupo:
+                continue
+            elif pd.api.types.is_numeric_dtype(df[c]):
+                agg_dict[c] = "mean"
+            else:
+                agg_dict[c] = "first"
+
+        df_final = df.groupby(colunas_grupo, as_index=False).agg(agg_dict)
 
         # 🔹 RENOMEAR
-        mapa_saida = {
+        df_final = df_final.rename(columns={
             "MES": "MÊS",
             "MATRICULA": "MATRÍCULA",
-            "PRODUTIVIDADE": "% Produtividade",
-            "EFICIENCIA": "% Eficiência",
-            "UTILIZACAO": "% Utilização",
-            "DI": "% DI",
-            "ROE": "% ROE",
-            "RNT": "% RNT",
-            "IOC": "% IOC",
-            "ISF": "% ISF",
-            "ROV": "% ROV",
-            "IPEO": "% IPEO"
-        }
+            "% PRODUTIVIDADE": "% Produtividade",
+            "% EFICIENCIA": "% Eficiência",
+            "% UTILIZACAO": "% Utilização",
+            "% DI": "% DI",
+            "% ROE": "% ROE",
+            "% RNT": "% RNT",
+            "% IOC": "% IOC",
+            "% ISF": "% ISF",
+            "% ROV": "% ROV",
+            "% IPEO": "% IPEO"
+        })
 
-        df_final = df_final.rename(columns=mapa_saida)
-
-        ordem = [
-            "EMPRESA", "MÊS", "REGIONAL", "PRESTADOR", "MATRÍCULA", "NOME",
-            "% Utilização", "% Produtividade", "% Eficiência", "TMS",
-            "% DI", "% ROE", "% RNT", "% IOC", "% ISF", "% ROV", "% IPEO", "POLO"
-        ]
-
-        ordem_existente = [c for c in ordem if c in df_final.columns]
-        df_final = df_final[ordem_existente]
-
-        # 🔥 GERAR EXCEL EM MEMÓRIA
+        # 🔥 EXPORTAR EXCEL
         output = io.BytesIO()
 
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
