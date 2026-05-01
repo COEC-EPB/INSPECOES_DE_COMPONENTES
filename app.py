@@ -33,9 +33,8 @@ def col(df, nome):
     return None
 
 
-# 🔹 LER EXCEL (HEADER AUTOMÁTICO)
+# 🔹 LER EXCEL (HEADER INTELIGENTE)
 def ler_excel(file):
-
     df_raw = pd.read_excel(file, header=None)
 
     header_row = None
@@ -43,41 +42,31 @@ def ler_excel(file):
     for i, row in df_raw.iterrows():
         valores = row.astype(str).str.upper()
 
-        # 🔥 procurar linha REAL de header
-        if (
-            valores.str.contains("FUNC").any() and
-            valores.str.contains("PROD").any()
-        ):
+        if valores.str.contains("FUNCIONARIO").any():
             header_row = i
             break
 
-    # fallback seguro
     if header_row is None:
-        print("⚠️ HEADER NÃO ENCONTRADO → tentando linha 5")
-        header_row = 5
+        header_row = 2  # fallback
 
     df = pd.read_excel(file, header=header_row)
     df = normalizar_colunas(df)
 
-    print("✅ HEADER CORRETO:", header_row)
-    print("📊 COLUNAS:", df.columns.tolist())
+    print("HEADER:", header_row)
+    print("COLUNAS:", df.columns.tolist())
 
     return df
 
-# 🔹 EXTRAIR MES DO NOME DO ARQUIVO
+
+# 🔹 EXTRAIR MES
 def extrair_mes(nome):
     nome = nome.upper()
+    meses = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN",
+             "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
 
-    mapa = {
-        "JAN": "JAN", "FEV": "FEV", "MAR": "MAR", "ABR": "ABR",
-        "MAI": "MAI", "JUN": "JUN", "JUL": "JUL", "AGO": "AGO",
-        "SET": "SET", "OUT": "OUT", "NOV": "NOV", "DEZ": "DEZ"
-    }
-
-    for k in mapa:
-        if k in nome:
-            return mapa[k]
-
+    for m in meses:
+        if m in nome:
+            return m
     return None
 
 
@@ -93,8 +82,32 @@ def separar_funcionario(df, col_func):
 
 # 🔹 PADRONIZAR CHAVES
 def padronizar_chaves(df):
-    df["MATRICULA"] = df["MATRICULA"].astype(str).str.replace(".0", "", regex=False).str.strip()
+    df["MATRICULA"] = df["MATRICULA"].astype(str).str.strip()
     df["MES"] = df["MES"].astype(str).str.upper().str.strip()
+    return df
+
+
+# 🔥 LIMPAR E CONVERTER NUMÉRICOS
+def converter_numericos(df):
+    colunas_numericas = [
+        "UTILIZACAO", "PRODUTIVIDADE", "EFICIENCIA", "TMS",
+        "DI", "ROE", "RNT", "IOC", "ISF", "ROV", "IPEO"
+    ]
+
+    for col_num in colunas_numericas:
+        col_real = col(df, col_num)
+
+        if col_real:
+            df[col_real] = (
+                df[col_real]
+                .astype(str)
+                .str.replace("%", "", regex=False)
+                .str.replace(",", ".", regex=False)
+                .str.strip()
+            )
+
+            df[col_real] = pd.to_numeric(df[col_real], errors="coerce")
+
     return df
 
 
@@ -133,15 +146,14 @@ def processar():
         df_meses = padronizar_chaves(df_meses)
         df_ipeo = padronizar_chaves(df_ipeo)
 
-        print("MES MESES:", df_meses["MES"].unique())
-        print("MES IPEO:", df_ipeo["MES"].unique())
+        # 🔥 CONVERSÃO CORRETA
+        df_meses = converter_numericos(df_meses)
+        df_ipeo = converter_numericos(df_ipeo)
 
         df = df_meses.merge(df_ipeo, on=["MATRICULA", "MES"], how="inner")
 
-        print("LINHAS APÓS MERGE:", len(df))
-
         if df.empty:
-            return jsonify({"erro": "Merge vazio → MATRÍCULA ou MES não batem"}), 400
+            return jsonify({"erro": "Merge vazio"}), 400
 
         def get(nome):
             return col(df, nome)
@@ -156,24 +168,11 @@ def processar():
             get("NOME")
         ]
 
-        colunas_grupo = [c for c in colunas_grupo if c is not None]
-
-        df = df.fillna(0)
-
-        colunas_numericas = [
-            "UTILIZACAO", "PRODUTIVIDADE", "EFICIENCIA", "TMS",
-            "DI", "ROE", "RNT", "IOC", "ISF", "ROV", "IPEO"
-        ]
-
-        for col_num in colunas_numericas:
-            col_real = col(df, col_num)
-            if col_real:
-                df[col_real] = pd.to_numeric(df[col_real], errors="coerce")
+        colunas_grupo = [c for c in colunas_grupo if c]
 
         df_final = df.groupby(colunas_grupo, as_index=False).mean(numeric_only=True)
 
-        print("COLUNAS FINAIS:", df_final.columns.tolist())
-
+        # 🔹 RENOMEAR
         mapa_saida = {
             "MES": "MÊS",
             "MATRICULA": "MATRÍCULA",
@@ -196,21 +195,18 @@ def processar():
             "% Utilização", "% Produtividade", "% Eficiência", "TMS",
             "% DI", "% ROE", "% RNT", "% IOC", "% ISF", "% ROV", "% IPEO", "POLO"
         ]
-        
-        for col_nome in ordem:
-            if col_nome not in df_final.columns:
-                df_final[col_nome] = 0
-            
+
         ordem_existente = [c for c in ordem if c in df_final.columns]
         df_final = df_final[ordem_existente]
 
+        # 🔥 GERAR EXCEL EM MEMÓRIA
         output = io.BytesIO()
 
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
             df_final.to_excel(writer, index=False)
-        
+
         output.seek(0)
-        
+
         return send_file(
             output,
             as_attachment=True,
@@ -223,7 +219,6 @@ def processar():
         return jsonify({"erro": str(e)}), 500
 
 
-# 🔥 PORTA PARA RAILWAY
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
