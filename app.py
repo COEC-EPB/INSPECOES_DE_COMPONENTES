@@ -33,40 +33,33 @@ def col(df, nome):
     return None
 
 
-# 🔹 LER EXCEL (HEADER INTELIGENTE)
+# 🔹 LER EXCEL (HEADER AUTOMÁTICO)
 def ler_excel(file):
-
     df_raw = pd.read_excel(file, header=None)
 
     header_row = None
     melhor_score = 0
 
     for i, row in df_raw.iterrows():
-        valores = row.astype(str)
+        score = row.astype(str).str.strip().ne("").sum()
 
-        # conta quantas colunas não vazias existem
-        score = valores.str.strip().ne("").sum()
-
-        # queremos linha com MUITAS colunas preenchidas
         if score > melhor_score:
             melhor_score = score
             header_row = i
 
-    # segurança
     if header_row is None:
         raise ValueError("Não conseguiu detectar header")
 
     df = pd.read_excel(file, header=header_row)
-
     df = normalizar_colunas(df)
 
-    print("✅ HEADER DETECTADO:", header_row)
+    print("✅ HEADER:", header_row)
     print("📊 COLUNAS:", df.columns.tolist())
 
     return df
 
 
-# 🔹 EXTRAIR MES PELO NOME DO ARQUIVO
+# 🔹 EXTRAIR MES DO NOME DO ARQUIVO
 def extrair_mes(nome):
     nome = nome.upper()
 
@@ -83,19 +76,12 @@ def extrair_mes(nome):
     return None
 
 
-# 🔹 SEPARAR MATRÍCULA E NOME (FUNCIONARIO)
+# 🔹 SEPARAR FUNCIONARIO
 def separar_funcionario(df, col_func):
-
-    serie = df[col_func].astype(str)
-
-    split = serie.str.split("-", n=1, expand=True)
+    split = df[col_func].astype(str).str.split("-", n=1, expand=True)
 
     df["MATRICULA"] = split[0].str.strip().str.replace(".0", "", regex=False)
-
-    if split.shape[1] > 1:
-        df["NOME"] = split[1].str.strip()
-    else:
-        df["NOME"] = ""
+    df["NOME"] = split[1].str.strip() if split.shape[1] > 1 else ""
 
     return df
 
@@ -111,14 +97,12 @@ def padronizar_chaves(df):
 @app.route('/processar', methods=['POST'])
 def processar():
     try:
-
         arquivos = request.files.getlist("meses")
         ipeo_file = request.files.get("ipeo")
 
         if not arquivos or not ipeo_file:
             return jsonify({"erro": "Envie arquivos"}), 400
 
-        # 🔹 MESES
         lista = []
 
         for f in arquivos:
@@ -135,22 +119,18 @@ def processar():
                 return jsonify({"erro": f"FUNCIONARIO não encontrado em {f.filename}"}), 400
 
             df = separar_funcionario(df, col_func)
-
             lista.append(df)
 
         df_meses = pd.concat(lista, ignore_index=True)
 
-        # 🔹 IPEO
         df_ipeo = ler_excel(ipeo_file)
 
-        # 🔹 PADRONIZAÇÃO
         df_meses = padronizar_chaves(df_meses)
         df_ipeo = padronizar_chaves(df_ipeo)
 
         print("MES MESES:", df_meses["MES"].unique())
         print("MES IPEO:", df_ipeo["MES"].unique())
 
-        # 🔹 MERGE
         df = df_meses.merge(df_ipeo, on=["MATRICULA", "MES"], how="inner")
 
         print("LINHAS APÓS MERGE:", len(df))
@@ -158,7 +138,6 @@ def processar():
         if df.empty:
             return jsonify({"erro": "Merge vazio → MATRÍCULA ou MES não batem"}), 400
 
-        # 🔹 COLUNAS DINÂMICAS
         def get(nome):
             return col(df, nome)
 
@@ -174,10 +153,10 @@ def processar():
 
         colunas_grupo = [c for c in colunas_grupo if c is not None]
 
-        # 🔹 AGRUPAMENTO
+        df = df.fillna(0)
+
         df_final = df.groupby(colunas_grupo, as_index=False).mean(numeric_only=True)
 
-        # 🔹 RENOMEAR
         mapa_saida = {
             "MES": "MÊS",
             "MATRICULA": "MATRÍCULA",
@@ -195,7 +174,6 @@ def processar():
 
         df_final = df_final.rename(columns=mapa_saida)
 
-        # 🔹 ORDEM FINAL
         ordem = [
             "EMPRESA", "MÊS", "REGIONAL", "PRESTADOR", "MATRÍCULA", "NOME",
             "% Utilização", "% Produtividade", "% Eficiência", "TMS",
@@ -205,17 +183,24 @@ def processar():
         ordem_existente = [c for c in ordem if c in df_final.columns]
         df_final = df_final[ordem_existente]
 
-        output = "resultado.csv"
+        # 🔥 GERAR CSV EM MEMÓRIA (SEM TRAVAR)
+        output = io.StringIO()
         df_final.to_csv(output, index=False)
-        
-        return send_file(output, as_attachment=True)
+        output.seek(0)
 
-        
+        return send_file(
+            io.BytesIO(output.getvalue().encode()),
+            mimetype="text/csv",
+            as_attachment=True,
+            download_name="resultado.csv"
+        )
+
     except Exception as e:
         print("ERRO:", str(e))
         return jsonify({"erro": str(e)}), 500
 
 
+# 🔥 PORTA PARA RAILWAY
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
