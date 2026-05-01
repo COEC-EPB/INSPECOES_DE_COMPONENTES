@@ -170,7 +170,19 @@ def processar():
 
         colunas_grupo = [c for c in colunas_grupo if c]
 
-        df_final = df.groupby(colunas_grupo, as_index=False).mean(numeric_only=True)
+        df_final = df.groupby(colunas_grupo, as_index=False).agg({
+            "UTILIZACAO": "mean",
+            "PRODUTIVIDADE": "mean",
+            "EFICIENCIA": "mean",
+            "TMS": "mean",
+            "DI": "mean",
+            "ROE": "mean",
+            "RNT": "mean",
+            "IOC": "mean",
+            "ISF": "mean",
+            "ROV": "mean",
+            "IPEO": "mean"
+        })
 
         # 🔹 RENOMEAR
         mapa_saida = {
