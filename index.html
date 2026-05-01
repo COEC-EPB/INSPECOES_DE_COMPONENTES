@@ -2,45 +2,77 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Sistema de Processamento</title>
+<title>Sistema Interno</title>
 
 <style>
-body {
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
   font-family: Arial;
+}
+
+body {
+  display: flex;
+  height: 100vh;
   background: #0f172a;
   color: white;
+}
+
+/* 🔹 SIDEBAR */
+.sidebar {
+  width: 220px;
+  background: #020617;
+  padding: 20px;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+  flex-direction: column;
 }
 
-.box {
+.sidebar h2 {
+  margin-bottom: 20px;
+}
+
+.sidebar button {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  text-align: left;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 6px;
+  margin-bottom: 5px;
+}
+
+.sidebar button:hover {
   background: #1e293b;
-  padding: 30px;
-  border-radius: 12px;
-  width: 350px;
-  text-align: center;
+  color: white;
 }
 
-button {
+/* 🔹 CONTEÚDO */
+.content {
+  flex: 1;
+  padding: 30px;
+}
+
+.card {
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 500px;
+}
+
+input, button.action {
   width: 100%;
   margin-top: 10px;
   padding: 10px;
-  border: none;
-  color: white;
-  cursor: pointer;
   border-radius: 6px;
+  border: none;
 }
 
-.ipeo { background: #22c55e; }
-.ponto { background: #3b82f6; }
-.voltar { background: #64748b; }
-
-input {
-  width: 100%;
-  margin-top: 10px;
-  padding: 8px;
+button.action {
+  background: #22c55e;
+  color: white;
+  cursor: pointer;
 }
 
 #status {
@@ -51,61 +83,67 @@ input {
 
 <body>
 
-<div class="box">
+<!-- 🔹 MENU LATERAL -->
+<div class="sidebar">
+  <h2>⚙️ Sistema</h2>
 
-  <!-- 🔹 MENU -->
-  <div id="menu">
-    <h2>⚙️ Sistema</h2>
+  <button onclick="mostrar('dashboard')">🏠 Dashboard</button>
+  <button onclick="mostrar('ipeo')">📊 Processador IPEO</button>
+  <button onclick="mostrar('ponto')">⏱️ Processador Ponto</button>
+</div>
 
-    <button class="ipeo" onclick="mostrar('ipeo')">📊 Processador IPEO</button>
-    <button class="ponto" onclick="mostrar('ponto')">⏱️ Processador de Ponto</button>
+
+<!-- 🔹 CONTEÚDO -->
+<div class="content">
+
+  <!-- DASHBOARD -->
+  <div id="dashboard">
+    <h1>Dashboard</h1>
+    <p>Bem-vindo ao sistema 👊</p>
   </div>
 
 
-  <!-- 🔹 IPEO -->
+  <!-- IPEO -->
   <div id="ipeo" style="display:none;">
-    <h2>📊 Processador IPEO</h2>
+    <div class="card">
+      <h2>📊 Processador IPEO</h2>
 
-    <label>📂 Arquivos MIP</label>
-    <input type="file" id="meses" multiple>
+      <label>Arquivos MIP</label>
+      <input type="file" id="meses" multiple>
 
-    <label>📂 Arquivo IPEO</label>
-    <input type="file" id="ipeoFile">
+      <label>Arquivo IPEO</label>
+      <input type="file" id="ipeoFile">
 
-    <button class="ipeo" onclick="enviar()">Processar</button>
-    <button class="voltar" onclick="voltar()">⬅ Voltar</button>
+      <button class="action" onclick="enviar()">Processar</button>
 
-    <div id="status"></div>
+      <div id="status"></div>
+    </div>
   </div>
 
 
-  <!-- 🔹 PONTO -->
+  <!-- PONTO -->
   <div id="ponto" style="display:none;">
-    <h2>⏱️ Processador de Ponto</h2>
-
-    <p>🚧 Em desenvolvimento...</p>
-
-    <button class="voltar" onclick="voltar()">⬅ Voltar</button>
+    <div class="card">
+      <h2>⏱️ Processador de Ponto</h2>
+      <p>🚧 Em desenvolvimento...</p>
+    </div>
   </div>
 
 </div>
 
 
 <script>
-// 🔄 troca de tela
+// 🔄 TROCAR TELA
 function mostrar(tela) {
-  document.getElementById("menu").style.display = "none";
+  document.getElementById("dashboard").style.display = "none";
+  document.getElementById("ipeo").style.display = "none";
+  document.getElementById("ponto").style.display = "none";
+
   document.getElementById(tela).style.display = "block";
 }
 
-function voltar() {
-  document.getElementById("menu").style.display = "block";
-  document.getElementById("ipeo").style.display = "none";
-  document.getElementById("ponto").style.display = "none";
-}
 
-
-// 🚀 envio IPEO
+// 🚀 ENVIO IPEO
 async function enviar() {
 
   const meses = document.getElementById("meses").files;
