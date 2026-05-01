@@ -172,6 +172,8 @@ def processar():
 
         df_final = df.groupby(colunas_grupo, as_index=False).mean(numeric_only=True)
 
+        print("COLUNAS FINAIS:", df_final.columns.tolist())
+
         mapa_saida = {
             "MES": "MÊS",
             "MATRICULA": "MATRÍCULA",
@@ -194,7 +196,11 @@ def processar():
             "% Utilização", "% Produtividade", "% Eficiência", "TMS",
             "% DI", "% ROE", "% RNT", "% IOC", "% ISF", "% ROV", "% IPEO", "POLO"
         ]
-
+        
+        for col_nome in ordem:
+            if col_nome not in df_final.columns:
+                df_final[col_nome] = 0
+            
         ordem_existente = [c for c in ordem if c in df_final.columns]
         df_final = df_final[ordem_existente]
 
