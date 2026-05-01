@@ -141,6 +141,9 @@ def processar():
         df_meses = padronizar_chaves(df_meses)
         df_ipeo = padronizar_chaves(df_ipeo)
 
+        df["MATRICULA"] = df["MATRICULA"].astype(str).str.strip()
+        df_ipeo["MATRICULA"] = df_ipeo["MATRICULA"].astype(str).str.strip()
+
         df = pd.merge(df_meses, df_ipeo, on=["MATRICULA", "MES"], how="left")
 
         colunas_ipeo = ["DI","ROE","RNT","IOC","ISF","ROV","IPEO"]
