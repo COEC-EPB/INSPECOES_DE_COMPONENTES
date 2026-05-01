@@ -145,6 +145,11 @@ def processar():
         df_ipeo["MATRICULA"] = df_ipeo["MATRICULA"].astype(str).str.strip()
 
         df = pd.merge(df_meses, df_ipeo, on=["MATRICULA", "MES"], how="left")
+        col_prestador = col(df, "PRESTADOR")
+
+        if col_prestador:
+            df[col_prestador] = df[col_prestador].fillna("PROPRIO")
+            df.loc[df[col_prestador] == "", col_prestador] = "PROPRIO"
 
         colunas_ipeo = ["DI","ROE","RNT","IOC","ISF","ROV","IPEO"]
 
