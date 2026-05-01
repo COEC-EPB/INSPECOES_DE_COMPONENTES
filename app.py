@@ -187,6 +187,32 @@ def processar():
             "% IPEO": "% IPEO"
         })
 
+        colunas_final = [
+            "EMPRESA",
+            "MÊS",
+            "REGIONAL",
+            "PRESTADOR",
+            "MATRÍCULA",
+            "NOME",
+            "% Utilização",
+            "% Produtividade",
+            "% Eficiência",
+            "TMS",
+            "% DI",
+            "% ROE",
+            "% RNT",
+            "% IOC",
+            "% ISF",
+            "% ROV",
+            "% IPEO",
+            "POLO"
+        ]
+        
+        # pega só as que existem (evita erro)
+        colunas_existentes = [c for c in colunas_final if c in df_final.columns]
+        
+        df_final = df_final[colunas_existentes]
+
         # 🔥 EXPORTAR EXCEL
         output = io.BytesIO()
 
