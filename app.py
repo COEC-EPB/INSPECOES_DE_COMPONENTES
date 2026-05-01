@@ -126,7 +126,7 @@ def processar():
         df_meses = padronizar_chaves(df_meses)
         df_ipeo = padronizar_chaves(df_ipeo)
 
-        df = pd.merge(df_meses, df_ipeo, on=["MATRICULA", "MES"], how="inner")
+        df = pd.merge(df_meses, df_ipeo, on=["MATRICULA", "MES"], how="left")
 
         if df.empty:
             return jsonify({"erro": "Merge vazio"}), 400
