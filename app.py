@@ -52,7 +52,7 @@ def ler_excel(file):
     return df
 
 
-# 🔹 EXTRAIR MÊS
+# 🔹 EXTRAIR MES
 def extrair_mes(nome):
     nome = nome.upper()
     meses = ["JAN","FEV","MAR","ABR","MAI","JUN",
@@ -63,25 +63,14 @@ def extrair_mes(nome):
     return None
 
 
-# 🔹 SEPARAR FUNCIONÁRIO
+# 🔹 SEPARAR FUNCIONARIO
 def separar_funcionario(df, col_func):
-    # garante string
     df[col_func] = df[col_func].astype(str)
 
-    # divide em 2 partes: matrícula e nome
     split = df[col_func].str.split(" - ", n=1, expand=True)
 
-    df["MATRICULA"] = (
-        split[0]
-        .str.strip()
-        .str.replace(".0", "", regex=False)
-    )
-
-    df["NOME"] = (
-        split[1]
-        .str.strip()
-        if split.shape[1] > 1 else ""
-    )
+    df["MATRICULA"] = split[0].str.strip().str.replace(".0", "", regex=False)
+    df["NOME"] = split[1].str.strip() if split.shape[1] > 1 else ""
 
     return df
 
@@ -109,7 +98,6 @@ def limpar_numericos(df):
 
             df[c] = pd.to_numeric(df[c], errors="ignore")
 
-            # 🔥 CORREÇÃO CRÍTICA
             if tem_percent:
                 df[c] = df[c] / 100
 
@@ -150,27 +138,16 @@ def processar():
         df_meses = padronizar_chaves(df_meses)
         df_ipeo = padronizar_chaves(df_ipeo)
 
-        df["MATRICULA"] = df["MATRICULA"].astype(str).str.strip()
-        df_ipeo["MATRICULA"] = df_ipeo["MATRICULA"].astype(str).str.strip()
-
+        # 🔹 MERGE
         df = pd.merge(df_meses, df_ipeo, on=["MATRICULA", "MES"], how="left")
-        col_prestador = col(df, "PRESTADOR")
 
+        # 🔹 PRESTADOR PROPRIO
+        col_prestador = col(df, "PRESTADOR")
         if col_prestador:
             df[col_prestador] = df[col_prestador].fillna("PROPRIO")
             df.loc[df[col_prestador] == "", col_prestador] = "PROPRIO"
 
-        colunas_ipeo = ["DI","ROE","RNT","IOC","ISF","ROV","IPEO"]
-
-        for c in colunas_ipeo:
-            col_real = col(df, c)
-            if col_real:
-                df[col_real] = df[col_real].fillna(0)
-
-        if df.empty:
-            return jsonify({"erro": "Merge vazio"}), 400
-
-        # 🔥 CORREÇÃO DEFINITIVA DOS _x E _y
+        # 🔥 RESOLVE _x e _y (ANTES DE QUALQUER COISA)
         for c in list(df.columns):
             if c.endswith("_x"):
                 base = c[:-2]
@@ -186,16 +163,22 @@ def processar():
         # 🔥 LIMPAR NUMÉRICOS
         df = limpar_numericos(df)
 
+        # 🔥 CORRIGIR ESCALA (%)
         colunas_percentuais = ["DI","ROE","RNT","IOC","ISF","ROV","IPEO"]
 
         for nome in colunas_percentuais:
             col_real = col(df, nome)
-            
+
             if col_real:
-                # se tiver valor maior que 1 → divide por 100
                 df[col_real] = df[col_real].apply(
-                    lambda x: x / 100 if pd.notnull(x) and x > 1 else x
+                    lambda x: x/100 if pd.notnull(x) and x > 1 else x
                 )
+
+        # 🔥 FILLNA SÓ AGORA
+        for nome in colunas_percentuais:
+            col_real = col(df, nome)
+            if col_real:
+                df[col_real] = df[col_real].fillna(0)
 
         # 🔹 AGRUPAMENTO
         colunas_grupo = [
@@ -207,9 +190,11 @@ def processar():
             "MATRICULA",
             col(df,"NOME")
         ]
+
         colunas_grupo = [c for c in colunas_grupo if c]
 
         agg_dict = {}
+
         for c in df.columns:
             if c in colunas_grupo:
                 continue
@@ -220,7 +205,7 @@ def processar():
 
         df_final = df.groupby(colunas_grupo, as_index=False).agg(agg_dict)
 
-        # 🔥 COLUNAS FINAIS GARANTIDAS
+        # 🔹 SELEÇÃO FINAL
         def get(nome):
             for c in df_final.columns:
                 if nome in c:
@@ -239,12 +224,12 @@ def processar():
             "% Eficiência": get("EFICIENCIA"),
             "TMS": get("TMS"),
             "% DI": get("% DI"),
-            "% ROE": get("ROE"),
-            "% RNT": get("RNT"),
-            "% IOC": get("IOC"),
-            "% ISF": get("ISF"),
-            "% ROV": get("ROV"),
-            "% IPEO": get("IPEO"),
+            "% ROE": get("% ROE"),
+            "% RNT": get("% RNT"),
+            "% IOC": get("% IOC"),
+            "% ISF": get("% ISF"),
+            "% ROV": get("% ROV"),
+            "% IPEO": get("% IPEO"),
             "POLO": get("POLO")
         }
 
@@ -258,6 +243,7 @@ def processar():
 
         # 🔹 EXPORTAR
         output = io.BytesIO()
+
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
             df_saida.to_excel(writer, index=False)
 
