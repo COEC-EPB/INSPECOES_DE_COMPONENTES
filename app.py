@@ -189,7 +189,12 @@ def processar():
         colunas_grupo_base = [c for c in colunas_grupo_base if c]
 
         def mais_frequente(x):
-            return x.mode().iloc[0] if not x.mode().empty else None
+            x = x.dropna()
+            
+            if x.empty:
+                return None
+        
+            return x.value_counts().idxmax()
 
         agg_dict = {}
 
