@@ -52,7 +52,7 @@ def ler_excel(file):
     return df
 
 
-# 🔹 EXTRAIR MES
+# 🔹 EXTRAIR MÊS
 def extrair_mes(nome):
     nome = nome.upper()
     meses = ["JAN","FEV","MAR","ABR","MAI","JUN",
@@ -66,7 +66,6 @@ def extrair_mes(nome):
 # 🔹 SEPARAR FUNCIONARIO
 def separar_funcionario(df, col_func):
     df[col_func] = df[col_func].astype(str)
-
     split = df[col_func].str.split(" - ", n=1, expand=True)
 
     df["MATRICULA"] = split[0].str.strip().str.replace(".0", "", regex=False)
@@ -132,7 +131,6 @@ def processar():
             lista.append(df)
 
         df_meses = pd.concat(lista, ignore_index=True)
-
         df_ipeo = ler_excel(ipeo_file)
 
         df_meses = padronizar_chaves(df_meses)
@@ -147,7 +145,7 @@ def processar():
             df[col_prestador] = df[col_prestador].fillna("PROPRIO")
             df.loc[df[col_prestador] == "", col_prestador] = "PROPRIO"
 
-        # 🔥 RESOLVE _x e _y (ANTES DE QUALQUER COISA)
+        # 🔹 RESOLVER _x _y
         for c in list(df.columns):
             if c.endswith("_x"):
                 base = c[:-2]
@@ -160,50 +158,55 @@ def processar():
 
         df = df[[c for c in df.columns if not c.endswith("_x") and not c.endswith("_y")]]
 
-        # 🔥 LIMPAR NUMÉRICOS
+        # 🔹 LIMPAR NUMÉRICOS
         df = limpar_numericos(df)
 
-        # 🔥 CORRIGIR ESCALA (%)
+        # 🔹 CORRIGIR ESCALA %
         colunas_percentuais = ["DI","ROE","RNT","IOC","ISF","ROV","IPEO"]
 
         for nome in colunas_percentuais:
             col_real = col(df, nome)
-
             if col_real:
                 df[col_real] = df[col_real].apply(
                     lambda x: x/100 if pd.notnull(x) and x > 1 else x
                 )
 
-        # 🔥 FILLNA SÓ AGORA
+        # 🔹 FILLNA
         for nome in colunas_percentuais:
             col_real = col(df, nome)
             if col_real:
                 df[col_real] = df[col_real].fillna(0)
 
-        # 🔹 AGRUPAMENTO
-        colunas_grupo = [
+        # 🔥 AGRUPAMENTO INTELIGENTE
+
+        colunas_grupo_base = [
             col(df,"EMPRESA"),
             "MES",
-            col(df,"REGIONAL"),
-            col(df,"PRESTADOR"),
-            col(df,"POLO"),
             "MATRICULA",
             col(df,"NOME")
         ]
 
-        colunas_grupo = [c for c in colunas_grupo if c]
+        colunas_grupo_base = [c for c in colunas_grupo_base if c]
+
+        def mais_frequente(x):
+            return x.mode().iloc[0] if not x.mode().empty else None
 
         agg_dict = {}
 
         for c in df.columns:
-            if c in colunas_grupo:
+            if c in colunas_grupo_base:
                 continue
+
+            elif c in [col(df,"REGIONAL"), col(df,"PRESTADOR"), col(df,"POLO")]:
+                agg_dict[c] = mais_frequente
+
             elif pd.api.types.is_numeric_dtype(df[c]):
                 agg_dict[c] = "mean"
+
             else:
                 agg_dict[c] = "first"
 
-        df_final = df.groupby(colunas_grupo, as_index=False).agg(agg_dict)
+        df_final = df.groupby(colunas_grupo_base, as_index=False).agg(agg_dict)
 
         # 🔹 SELEÇÃO FINAL
         def get(nome):
@@ -236,14 +239,10 @@ def processar():
         df_saida = pd.DataFrame()
 
         for nome, c in colunas.items():
-            if c:
-                df_saida[nome] = df_final[c]
-            else:
-                df_saida[nome] = None
+            df_saida[nome] = df_final[c] if c else None
 
         # 🔹 EXPORTAR
         output = io.BytesIO()
-
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
             df_saida.to_excel(writer, index=False)
 
