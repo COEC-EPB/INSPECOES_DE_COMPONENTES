@@ -32,17 +32,6 @@ def col(df, nome):
             return c
     return None
 
-def escolher_prestador(x):
-    prioridades = ["PROPRIO", "CONTROL", "TECCEL", "ENERGY"]
-
-    x = x.dropna().astype(str)
-
-    for p in prioridades:
-        if any(x.str.contains(p)):
-            return p
-
-    return x.iloc[0] if not x.empty else "SEM DADO"
-
 
 # 🔹 LER EXCEL
 def ler_excel(file):
@@ -96,7 +85,6 @@ def padronizar_chaves(df):
 def limpar_numericos(df):
     for c in df.columns:
         if df[c].dtype == "object":
-
             tem_percent = df[c].astype(str).str.contains("%").any()
 
             df[c] = (
@@ -112,6 +100,22 @@ def limpar_numericos(df):
                 df[c] = df[c] / 100
 
     return df
+
+
+# 🔥 ESCOLHER PRESTADOR POR PESO (TMS)
+def escolher_prestador(grupo, df):
+    col_prestador = col(df, "PRESTADOR")
+    col_tms = col(df, "TMS")
+
+    if not col_prestador:
+        return "SEM DADO"
+
+    if col_tms and col_tms in grupo:
+        resumo = grupo.groupby(col_prestador)[col_tms].sum()
+        if not resumo.empty:
+            return resumo.idxmax()
+
+    return grupo[col_prestador].dropna().iloc[0]
 
 
 @app.route('/processar', methods=['POST'])
@@ -150,8 +154,6 @@ def processar():
         # 🔹 MERGE
         df = pd.merge(df_meses, df_ipeo, on=["MATRICULA", "MES"], how="left")
 
-        
-
         # 🔹 PRESTADOR PROPRIO
         col_prestador = col(df, "PRESTADOR")
         if col_prestador:
@@ -171,10 +173,9 @@ def processar():
 
         df = df[[c for c in df.columns if not c.endswith("_x") and not c.endswith("_y")]]
 
-        # 🔹 LIMPAR NUMÉRICOS
         df = limpar_numericos(df)
 
-        # 🔹 CORRIGIR ESCALA %
+        # 🔹 CORRIGIR %
         colunas_percentuais = ["DI","ROE","RNT","IOC","ISF","ROV","IPEO"]
 
         for nome in colunas_percentuais:
@@ -182,96 +183,49 @@ def processar():
             if col_real:
                 df[col_real] = df[col_real].apply(
                     lambda x: x/100 if pd.notnull(x) and x > 1 else x
-                )
+                ).fillna(0)
 
-        # 🔹 FILLNA
-        for nome in colunas_percentuais:
-            col_real = col(df, nome)
-            if col_real:
-                df[col_real] = df[col_real].fillna(0)
+        # 🔥 AGRUPAMENTO POR MÊS COM REGRA INTELIGENTE
 
-        # 🔥 AGRUPAMENTO INTELIGENTE
+        def agregar(grupo):
+            resultado = {}
 
-        colunas_grupo_base = [
+            resultado["EMPRESA"] = grupo[col(df,"EMPRESA")].iloc[0]
+            resultado["MES"] = grupo["MES"].iloc[0]
+            resultado["MATRICULA"] = grupo["MATRICULA"].iloc[0]
+            resultado["NOME"] = grupo[col(df,"NOME")].iloc[0]
+
+            # 🔥 PRESTADOR CORRETO
+            resultado["PRESTADOR"] = escolher_prestador(grupo, df)
+
+            # 🔹 REGIONAL E POLO
+            col_regional = col(df,"REGIONAL")
+            col_polo = col(df,"POLO")
+
+            if col_regional:
+                resultado["REGIONAL"] = grupo[col_regional].dropna().value_counts().idxmax()
+
+            if col_polo:
+                resultado["POLO"] = grupo[col_polo].dropna().value_counts().idxmax()
+
+            # 🔹 MÉDIAS
+            for coluna in grupo.columns:
+                if pd.api.types.is_numeric_dtype(grupo[coluna]):
+                    resultado[coluna] = grupo[coluna].mean()
+
+            return pd.Series(resultado)
+
+        df_final = df.groupby([
             col(df,"EMPRESA"),
+            "MES",
             "MATRICULA",
             col(df,"NOME")
-        ]
-
-        colunas_grupo_base = [c for c in colunas_grupo_base if c]
-
-        def mais_frequente(x):
-            x = x.dropna()
-            
-            if x.empty:
-                return None
-        
-            return x.value_counts().idxmax()
-
-        agg_dict = {}
-
-        col_regional = col(df, "REGIONAL")
-        col_prestador = col(df, "PRESTADOR")
-        col_polo = col(df, "POLO")
-        
-        for c in df.columns:
-            if c in colunas_grupo_base:
-                continue
-        
-            # 🔥 PRESTADOR COM PRIORIDADE
-            elif c == col_prestador:
-                agg_dict[c] = escolher_prestador
-        
-            # 🔹 REGIONAL E POLO NORMAL
-            elif c in [col_regional, col_polo]:
-                agg_dict[c] = mais_frequente
-        
-            # 🔹 NUMÉRICOS
-            elif pd.api.types.is_numeric_dtype(df[c]):
-                agg_dict[c] = "mean"
-        
-            else:
-                agg_dict[c] = "first"
-
-        df_final = df.groupby(colunas_grupo_base, as_index=False).agg(agg_dict)
-
-        # 🔹 SELEÇÃO FINAL
-        def get(nome):
-            for c in df_final.columns:
-                if nome in c:
-                    return c
-            return None
-
-        colunas = {
-            "EMPRESA": get("EMPRESA"),
-            "MÊS": get("MES"),
-            "REGIONAL": get("REGIONAL"),
-            "PRESTADOR": get("PRESTADOR"),
-            "MATRÍCULA": get("MATRICULA"),
-            "NOME FUNCIONÁRIO": get("NOME"),
-            "% Utilização": get("UTILIZACAO"),
-            "% Produtividade": get("PRODUTIVIDADE"),
-            "% Eficiência": get("EFICIENCIA"),
-            "TMS": get("TMS"),
-            "% DI": get("% DI"),
-            "% ROE": get("% ROE"),
-            "% RNT": get("% RNT"),
-            "% IOC": get("% IOC"),
-            "% ISF": get("% ISF"),
-            "% ROV": get("% ROV"),
-            "% IPEO": get("% IPEO"),
-            "POLO": get("POLO")
-        }
-
-        df_saida = pd.DataFrame()
-
-        for nome, c in colunas.items():
-            df_saida[nome] = df_final[c] if c else None
+        ]).apply(agregar).reset_index(drop=True)
 
         # 🔹 EXPORTAR
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            df_saida.to_excel(writer, index=False)
+            df_final.to_excel(writer, index=False)
 
         output.seek(0)
 
