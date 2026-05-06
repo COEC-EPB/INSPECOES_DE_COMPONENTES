@@ -142,9 +142,19 @@ def processar():
         if not lista:
             return jsonify({"erro": "Nenhum arquivo válido encontrado"}), 400
         df_meses = pd.concat(lista, ignore_index=True)
-        if "MES" not in df.columns:
-            df["MES"] = "SEM MES"
-        df["MES"] = df["MES"].astype(str).str.upper().str.strip()
+
+        # 🔥 GARANTIR MES NO DF_CORRETO
+        if "MES" not in df_meses.columns:
+            df_meses["MES"] = "SEM MES"
+        
+        df_meses["MES"] = df_meses["MES"].astype(str).str.upper().str.strip()
+
+
+        if "MES" not in df_ipeo.columns:
+            df_ipeo["MES"] = "SEM MES"
+        
+        df_ipeo["MES"] = df_ipeo["MES"].astype(str).str.upper().str.strip()
+        
         df_ipeo = ler_excel(ipeo_file)
 
         df_meses = padronizar_chaves(df_meses)
