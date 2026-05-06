@@ -150,12 +150,14 @@ def processar():
         df_meses["MES"] = df_meses["MES"].astype(str).str.upper().str.strip()
 
 
+        
+        
+        df_ipeo = ler_excel(ipeo_file)
+
         if "MES" not in df_ipeo.columns:
             df_ipeo["MES"] = "SEM MES"
         
         df_ipeo["MES"] = df_ipeo["MES"].astype(str).str.upper().str.strip()
-        
-        df_ipeo = ler_excel(ipeo_file)
 
         df_meses = padronizar_chaves(df_meses)
         df_ipeo = padronizar_chaves(df_ipeo)
