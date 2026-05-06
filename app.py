@@ -154,6 +154,19 @@ def processar():
         # 🔹 MERGE
         df = pd.merge(df_meses, df_ipeo, on=["MATRICULA", "MES"], how="left")
 
+        col_empresa = col(df, "EMPRESA")
+
+        if not col_empresa:
+            # tenta alternativas comuns
+            for tentativa in ["SGLEMP", "EMP", "EMPRESA_X", "EMPRESA_Y"]:
+                col_empresa = col(df, tentativa)
+                if col_empresa:
+                    break
+        
+        if not col_empresa:
+            df["EMPRESA"] = "SEM DADO"
+            col_empresa = "EMPRESA"
+
         # 🔹 PRESTADOR PROPRIO
         col_prestador = col(df, "PRESTADOR")
         if col_prestador:
