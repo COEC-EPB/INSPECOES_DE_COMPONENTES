@@ -164,7 +164,19 @@ def processar():
         df = limpar_numericos(df)
 
         # 🔹 COLUNAS FIXAS
-        col_empresa = col(df,"EMPRESA") or "EMPRESA"
+        col_empresa = col(df,"EMPRESA")
+
+        if not col_empresa:
+            # tenta alternativas
+            for tentativa in ["SGLEMP", "EMP", "EMPRESA_X", "EMPRESA_Y"]:
+                col_empresa = col(df, tentativa)
+                if col_empresa:
+                    break
+        
+        # se ainda não encontrou → cria
+        if not col_empresa:
+            df["EMPRESA"] = "SEM DADO"
+            col_empresa = "EMPRESA"
         col_nome = col(df,"NOME")
         col_regional = col(df,"REGIONAL")
         col_polo = col(df,"POLO")
@@ -178,7 +190,7 @@ def processar():
         def agregar(grupo):
             res = {}
 
-            res["EMPRESA"] = grupo[col_empresa].iloc[0]
+            res["EMPRESA"] = grupo[col_empresa].iloc[0] if col_empresa in grupo else "SEM DADO"
             res["MES"] = grupo["MES"].iloc[0]
             res["MATRICULA"] = grupo["MATRICULA"].iloc[0]
             res["NOME"] = grupo[col_nome].iloc[0] if col_nome else ""
@@ -199,12 +211,15 @@ def processar():
 
             return pd.Series(res)
 
-        df_final = df.groupby([
-            col_empresa,
-            "MES",
-            "MATRICULA",
-            col_nome
-        ]).apply(agregar).reset_index(drop=True)
+        grupo_cols = ["MES", "MATRICULA"]
+
+        if col_empresa:
+            grupo_cols.insert(0, col_empresa)
+        
+        if col_nome:
+            grupo_cols.append(col_nome)
+        
+        df_final = df.groupby(grupo_cols).apply(agregar).reset_index(drop=True)
 
         # 🔹 EXPORTAR
         output = io.BytesIO()
