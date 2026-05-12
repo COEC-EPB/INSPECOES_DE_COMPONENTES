@@ -85,47 +85,76 @@ def extrair_mes(nome):
 
 # 🔹 SEPARAR FUNCIONARIO
 def separar(df, nome_arquivo=""):
-    # 🔍 tenta encontrar a coluna correta
+
     possiveis = ["FUNCIONARIO", "FUNCIONÁRIO", "NOME", "COLABORADOR"]
 
     col = None
+
     for p in possiveis:
         for c in df.columns:
             if p in c:
                 col = c
                 break
+
         if col:
             break
 
     if not col:
-        print("COLUNAS DISPONÍVEIS:", df.columns.tolist())
-        raise Exception(f"Coluna de funcionário não encontrada no arquivo {nome_arquivo}")
+        raise Exception(f"Coluna funcionário não encontrada: {nome_arquivo}")
 
     texto = df[col].astype(str)
 
-    # 🔥 extrai matrícula
-    df["MATRICULA"] = texto.str.extract(r"^(\d+)")[0]
+    # 🔥 matrícula
+    df["MATRICULA"] = (
+        texto
+        .str.extract(r"(\d+)")[0]
+        .astype(str)
+        .str.replace(".0", "", regex=False)
+        .str.strip()
+    )
 
-    # 🔥 extrai nome
-    df["NOME"] = texto.str.extract(r"-\s*(.*)")[0]
-
-    # fallback
-    df["NOME"] = df["NOME"].fillna(texto)
+    # 🔥 nome
+    df["NOME"] = (
+        texto
+        .str.replace(r"^\d+\s*-\s*", "", regex=True)
+        .str.strip()
+    )
 
     return df
 
 
 # 🔹 LIMPAR NUMÉRICOS
 def limpar(df):
-    for c in df.columns:
-        if df[c].dtype == "object":
+
+    # 🔥 apenas colunas numéricas conhecidas
+    colunas_numericas = [
+        "% PRODUTIVIDADE",
+        "% EFICIENCIA",
+        "% UTILIZACAO",
+        "TMS",
+        "% DI",
+        "% ROE",
+        "% RNT",
+        "% IOC",
+        "% ISF",
+        "% ROV",
+        "% IPEO"
+    ]
+
+    for c in colunas_numericas:
+
+        if c in df.columns:
+
             df[c] = (
-                df[c].astype(str)
-                .str.replace("%","")
-                .str.replace(",",".")
+                df[c]
+                .astype(str)
+                .str.replace("%", "", regex=False)
+                .str.replace(",", ".", regex=False)
                 .str.strip()
             )
-            df[c] = pd.to_numeric(df[c], errors="ignore")
+
+            df[c] = pd.to_numeric(df[c], errors="coerce")
+
     return df
 
 
@@ -205,8 +234,13 @@ def processar():
         df_meses["MATRICULA"] = df_meses["MATRICULA"].astype(str).str.replace(".0","", regex=False).str.strip()
         df_ipeo["MATRICULA"] = df_ipeo["MATRICULA"].astype(str).str.replace(".0","", regex=False).str.strip()
         # 🔥 MERGE
+
+        print(df_meses[["MES","MATRICULA","NOME"]].head())
+
+        print(df_ipeo[["MES","MATRICULA"]].head())
         df = pd.merge(df_meses, df_ipeo, on=["MATRICULA","MES"], how="left")
 
+        print(df.head())
         df = limpar(df)
 
         # 🔥 AGRUPAMENTO
@@ -243,6 +277,9 @@ def processar():
                     res[c] = g[c].mean()
         
             return pd.Series(res)
+        df = df.dropna(subset=["MATRICULA"])
+
+        df = df[df["MATRICULA"] != ""]    
 
         df_final = df.groupby(["MES","MATRICULA","NOME"]).apply(agregar).reset_index(drop=True)
 
