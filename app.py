@@ -310,7 +310,13 @@ def processar():
             })
         )
 
-
+        # 🔥 REMOVER LINHAS SEM REGIONAL OU POLO
+        df_final = df_final.dropna(subset=["REGIONAL", "POLO"])
+        
+        df_final = df_final[
+            (df_final["REGIONAL"].astype(str).str.strip() != "") &
+            (df_final["POLO"].astype(str).str.strip() != "")
+        ]
         # 🔥 EXPORTAR
         output = io.BytesIO()
         df_final.to_excel(output, index=False)
