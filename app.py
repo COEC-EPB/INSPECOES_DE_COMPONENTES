@@ -242,14 +242,41 @@ def processar():
         df = pd.merge(df_meses, df_ipeo, on=["MATRICULA","MES"], how="left")
 
         # 🔥 EMPRESA
+        # 🔥 AJUSTAR EMPRESA
         if "EMPRESA_x" in df.columns:
             df["EMPRESA"] = df["EMPRESA_x"]
         
         elif "EMPRESA_y" in df.columns:
             df["EMPRESA"] = df["EMPRESA_y"]
         
-        # 🔥 REMOVER SUFIXOS
-        df = df.drop(columns=[c for c in df.columns if c.endswith("_x") or c.endswith("_y")])
+        
+        # 🔥 AJUSTAR INDICADORES
+        indicadores = [
+            "% DI",
+            "% ROE",
+            "% RNT",
+            "% IOC",
+            "% ISF",
+            "% ROV"
+        ]
+        
+        for ind in indicadores:
+        
+            if f"{ind}_y" in df.columns:
+                df[ind] = df[f"{ind}_y"]
+        
+            elif f"{ind}_x" in df.columns:
+                df[ind] = df[f"{ind}_x"]
+        
+        
+        # 🔥 REMOVER SUFIXOS APENAS DEPOIS
+        df = df.drop(
+            columns=[
+                c for c in df.columns
+                if c.endswith("_x") or c.endswith("_y")
+            ],
+            errors="ignore"
+        )
 
     
         df = limpar(df)
