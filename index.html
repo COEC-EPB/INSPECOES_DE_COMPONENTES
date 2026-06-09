@@ -3,90 +3,116 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gerador de Relatório Fotográfico</title>
+  <title>Gerador de Relatório de Inspeção</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <style>
     :root{
-      --azul:#0097CE;
-      --azul-dark:#0079A6;
-      --laranja:#F36F21;
-      --bg:#eef5f9;
+      --azul:#0f4c81;
+      --azul-escuro:#08345a;
+      --laranja:#f36f21;
+      --cinza:#6b7280;
+      --bg:#eef3f8;
       --card:#ffffff;
       --texto:#1f2937;
-      --borda:#dbe3ea;
-      --ok:#16a34a;
-      --erro:#dc2626;
+      --borda:#d7e1ea;
+      --ok:#15803d;
+      --erro:#b91c1c;
+      --superficie:#f8fbfe;
     }
 
     *{box-sizing:border-box;margin:0;padding:0}
     body{
-      font-family:Segoe UI,Arial,sans-serif;
-      background:var(--bg);
+      font-family:Segoe UI, Arial, sans-serif;
+      background:linear-gradient(180deg, #edf4fb 0%, #e7eff6 100%);
       color:var(--texto);
-      padding:18px;
+      padding:20px;
     }
-    .container{max-width:980px;margin:0 auto}
+    .container{max-width:1050px;margin:0 auto}
     .card{
       background:var(--card);
-      border-radius:18px;
-      padding:24px;
-      box-shadow:0 8px 24px rgba(0,0,0,.08);
-      border-top:6px solid var(--laranja);
+      border-radius:20px;
+      padding:28px;
+      box-shadow:0 14px 35px rgba(15,76,129,.10);
+      border-top:7px solid var(--laranja);
     }
     h1{
       text-align:center;
-      color:var(--azul-dark);
-      margin-bottom:8px;
-      font-size:30px;
+      color:var(--azul-escuro);
+      margin-bottom:6px;
+      font-size:31px;
+      letter-spacing:.2px;
     }
     .subtitulo{
       text-align:center;
       color:#64748b;
-      margin-bottom:24px;
+      margin-bottom:26px;
+      line-height:1.5;
     }
     .hidden{display:none !important}
     .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    .row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
     @media(max-width:760px){
-      .row,.row-3{grid-template-columns:1fr}
+      .row{grid-template-columns:1fr}
       .card{padding:18px}
-      h1{font-size:25px}
+      h1{font-size:26px}
     }
-    label{display:block;font-weight:700;margin-bottom:6px}
+    label{display:block;font-weight:700;margin-bottom:6px;color:#0f172a}
     input, textarea, select{
-      width:100%;padding:12px;border:1px solid var(--borda);border-radius:12px;font-size:15px;background:#fff;
+      width:100%;padding:13px;border:1px solid var(--borda);border-radius:12px;font-size:15px;background:#fff;
+    }
+    input:focus, textarea:focus, select:focus{
+      outline:none;
+      border-color:#7bb4de;
+      box-shadow:0 0 0 4px rgba(15,76,129,.08);
     }
     textarea{resize:vertical;min-height:90px}
     button{
       border:none;border-radius:12px;padding:13px 16px;font-size:15px;font-weight:700;cursor:pointer;
       display:inline-flex;align-items:center;justify-content:center;gap:8px;
+      transition:.18s ease;
     }
+    button:hover{transform:translateY(-1px)}
     .btn-principal{background:var(--azul);color:#fff}
-    .btn-principal:hover{background:var(--azul-dark)}
+    .btn-principal:hover{background:var(--azul-escuro)}
     .btn-secundario{background:var(--laranja);color:#fff}
-    .btn-secundario:hover{filter:brightness(.95)}
+    .btn-secundario:hover{filter:brightness(.97)}
     .btn-neutro{background:#64748b;color:#fff}
     .btn-neutro:hover{filter:brightness(.95)}
-    .btn-sucesso{background:var(--ok);color:#fff}
     .btn-erro{background:var(--erro);color:#fff}
     .acoes-topo{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
-    .step-title{font-size:22px;margin-bottom:18px;color:var(--azul-dark)}
-    .help{font-size:13px;color:#64748b;margin-top:6px}
-    .bloco{border:1px solid var(--borda);border-radius:16px;padding:18px;background:#f8fbfd;margin-top:18px}
-    .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:14px}
+    .step-title{font-size:22px;margin-bottom:18px;color:var(--azul-escuro)}
+    .help{font-size:13px;color:#64748b;margin-top:6px;line-height:1.45}
+    .bloco{
+      border:1px solid var(--borda);
+      border-radius:18px;
+      padding:18px;
+      background:var(--superficie);
+      margin-top:18px;
+    }
+    .bloco-cabecalho{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-top:14px}
     .thumb{
       border:1px solid var(--borda);border-radius:14px;padding:8px;background:#fff;position:relative;
+      box-shadow:0 6px 14px rgba(2, 36, 63, .05);
     }
-    .thumb img{width:100%;height:110px;object-fit:cover;border-radius:10px;display:block}
+    .thumb img{width:100%;height:120px;object-fit:cover;border-radius:10px;display:block}
     .thumb button{
-      position:absolute;top:8px;right:8px;padding:6px 8px;border-radius:8px;font-size:12px;background:rgba(220,38,38,.95);color:#fff;
+      position:absolute;top:8px;right:8px;padding:6px 8px;border-radius:8px;font-size:12px;background:rgba(185,28,28,.95);color:#fff;
     }
     .lista-componentes{display:grid;gap:12px;margin-top:18px}
     .item{
-      border:1px solid var(--borda);border-radius:14px;padding:16px;background:#fff;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;
+      border:1px solid var(--borda);
+      border-radius:16px;
+      padding:16px;
+      background:#fff;
+      display:flex;
+      justify-content:space-between;
+      gap:14px;
+      align-items:center;
+      flex-wrap:wrap;
+      box-shadow:0 8px 16px rgba(2,36,63,.04);
     }
-    .item h3{font-size:18px;color:var(--azul-dark);margin-bottom:6px}
+    .item h3{font-size:18px;color:var(--azul-escuro);margin-bottom:6px}
     .item small{color:#64748b}
     .badge{display:inline-block;background:#e0f2fe;color:#075985;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700}
     .status{
@@ -98,15 +124,24 @@
     .menu button{width:100%}
     .footer-acoes{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
     .resumo{display:grid;gap:8px;margin-top:8px}
-    .resumo div{padding:10px 12px;border-radius:10px;background:#fff;border:1px solid var(--borda)}
+    .resumo div{padding:11px 12px;border-radius:12px;background:#fff;border:1px solid var(--borda)}
     .muted{color:#64748b}
+    .hero-pdf{
+      border:1px solid #dbe7f3;
+      background:linear-gradient(135deg, #f8fbff 0%, #eef6fd 100%);
+      border-radius:18px;
+      padding:18px;
+      margin-top:18px;
+    }
+    .hero-pdf h3{color:var(--azul-escuro);margin-bottom:8px}
+    .hero-pdf ul{margin-left:18px;color:#475569;line-height:1.6}
   </style>
 </head>
 <body>
   <div class="container">
     <div class="card">
       <h1>Relatório Fotográfico</h1>
-      <p class="subtitulo">Preencha os dados do responsável, adicione componentes com fotos e escolha se quer baixar o PDF ou salvar no Cloudflare.</p>
+      <p class="subtitulo">Preencha os dados do responsável, adicione componentes com fotos e gere um PDF.</p>
 
       <div id="statusMsg" class="status"></div>
 
@@ -115,10 +150,6 @@
           <button id="btnNovoRelatorio" type="button" class="btn-principal">
             <i class="bi bi-file-earmark-plus-fill"></i>
             Novo relatório
-          </button>
-          <button id="btnVoltarInicio" type="button" class="btn-neutro hidden">
-            <i class="bi bi-arrow-left"></i>
-            Voltar
           </button>
         </div>
       </section>
@@ -184,7 +215,7 @@
               </div>
             </div>
 
-            <p class="help">Você pode adicionar várias fotos para o mesmo componente e remover qualquer imagem antes de salvar.</p>
+            <p class="help">Você pode adicionar várias fotos para o mesmo componente, visualizar as miniaturas e remover qualquer imagem antes de salvar.</p>
 
             <div id="previewFotos" class="thumbs"></div>
 
@@ -196,7 +227,7 @@
         </div>
 
         <div class="bloco">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div class="bloco-cabecalho">
             <h3>Componentes adicionados</h3>
             <span class="badge" id="badgeQtd">0 componente(s)</span>
           </div>
@@ -206,7 +237,7 @@
         </div>
 
         <div class="footer-acoes">
-          <button type="button" class="btn-secundario hidden" id="btnFinalizar"><i class="bi bi-check2-circle"></i> Não, finalizar relatório</button>
+          <button type="button" class="btn-secundario hidden" id="btnFinalizar"><i class="bi bi-check2-circle"></i> Finalizar relatório</button>
         </div>
       </section>
 
@@ -214,8 +245,8 @@
         <div class="acoes-topo">
           <button type="button" class="btn-neutro" id="btnVoltarEdicao"><i class="bi bi-arrow-left"></i> Voltar para edição</button>
         </div>
-        <h2 class="step-title">3. Deseja fazer o download do relatório?</h2>
-        <p class="muted">Se você baixar agora, o PDF será gerado no navegador. Se não quiser baixar, os dados serão enviados para o seu backend no Cloudflare.</p>
+        <h2 class="step-title">3. Gerar relatório profissional em PDF</h2>
+        <p class="muted">O PDF será montado com capa, identificação do responsável, numeração dos componentes, fotos dimensionadas e visual mais corporativo.</p>
 
         <div class="bloco">
           <div class="resumo">
@@ -224,17 +255,25 @@
           </div>
         </div>
 
+        <div class="hero-pdf">
+          <h3>O PDF vai incluir</h3>
+          <ul>
+            <li>Capa com título do documento e data de emissão</li>
+            <li>Identificação do responsável</li>
+            <li>Seção individual por componente</li>
+            <li>Fotos centralizadas e ajustadas à página</li>
+            <li>Rodapé com paginação</li>
+          </ul>
+        </div>
+
         <div class="footer-acoes">
           <button type="button" id="btnBaixarPdf" class="btn-principal"><i class="bi bi-file-earmark-pdf-fill"></i> Baixar PDF</button>
-          <button type="button" id="btnSalvarCloudflare" class="btn-secundario"><i class="bi bi-cloud-arrow-up-fill"></i> Salvar no Cloudflare</button>
         </div>
       </section>
     </div>
   </div>
 
   <script>
-    const API_URL = "https://inspecao.pedro-fillype.workers.dev";
-
     const estado = {
       responsavel: {
         nome: "",
@@ -271,7 +310,7 @@
     document.getElementById('btnNovoRelatorio').addEventListener('click', () => irPara(telaDados));
     document.getElementById('btnVoltarDados').addEventListener('click', () => irPara(telaInicial));
     document.getElementById('btnVoltarRelatorio').addEventListener('click', () => {
-      if (confirm('Deseja voltar ao início? Os dados preenchidos nesta tela continuarão no navegador até você recarregar a página.')) {
+      if (confirm('Deseja voltar ao início? Os dados continuarão preenchidos até você recarregar a página.')) {
         irPara(telaInicial);
       }
     });
@@ -375,7 +414,7 @@
       inputGaleria.value = '';
       renderizarPreview();
       renderizarListaComponentes();
-      mostrarStatus('Componente salvo. Se existir mais componente, adicione agora. Se não existir, finalize o relatório.', 'ok');
+      mostrarStatus('Componente salvo. Se existir mais componente, continue adicionando. Quando terminar, clique em finalizar relatório.', 'ok');
     });
 
     function renderizarListaComponentes() {
@@ -421,7 +460,7 @@
       }
       janela.document.write(`
         <html><head><title>${comp.nome}</title>
-        <style>body{font-family:Arial;padding:20px} .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px} img{width:100%;height:220px;object-fit:cover;border-radius:12px;border:1px solid #ddd}</style>
+        <style>body{font-family:Arial;padding:20px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}img{width:100%;height:220px;object-fit:cover;border-radius:12px;border:1px solid #ddd}</style>
         </head><body>
         <h2>${comp.nome}</h2>
         <div class="grid">
@@ -463,80 +502,134 @@
       });
     }
 
+    function adicionarCabecalhoPagina(pdf, titulo, subtitulo = '') {
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      pdf.setFillColor(15, 76, 129);
+      pdf.rect(0, 0, pageWidth, 22, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(16);
+      pdf.text(titulo, 14, 14);
+      if (subtitulo) {
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(9);
+        pdf.text(subtitulo, pageWidth - 14, 14, { align: 'right' });
+      }
+      pdf.setTextColor(31, 41, 55);
+    }
+
+    function adicionarRodapePagina(pdf, paginaAtual) {
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      pdf.setDrawColor(210, 220, 230);
+      pdf.line(14, pageHeight - 12, pageWidth - 14, pageHeight - 12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(9);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text(`Página ${paginaAtual}`, pageWidth - 20, pageHeight - 6, { align: 'right' });
+      pdf.text('Relatório fotográfico', 14, pageHeight - 6);
+      pdf.setTextColor(31, 41, 55);
+    }
+
     async function gerarPdfBlob() {
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const margem = 12;
-      let y = 18;
+      const margem = 14;
+      let pagina = 1;
 
+      // Capa
+      pdf.setFillColor(15, 76, 129);
+      pdf.rect(0, 0, pageWidth, 55, 'F');
+      pdf.setTextColor(255, 255, 255);
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(18);
-      pdf.text('RELATÓRIO FOTOGRÁFICO', pageWidth / 2, y, { align: 'center' });
-      y += 12;
-
+      pdf.setFontSize(24);
+      pdf.text('RELATÓRIO FOTOGRÁFICO', pageWidth / 2, 25, { align: 'center' });
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(11);
-      const linhasCabecalho = [
-        `Nome: ${estado.responsavel.nome}`,
-        `Matrícula: ${estado.responsavel.matricula}`,
-        `Cargo: ${estado.responsavel.cargo}`,
-        `Data: ${new Date().toLocaleString('pt-BR')}`
-      ];
-      linhasCabecalho.forEach(l => {
-        pdf.text(l, margem, y);
-        y += 7;
-      });
-      y += 4;
+      pdf.text('Documento gerado automaticamente', pageWidth / 2, 34, { align: 'center' });
 
+      pdf.setTextColor(31, 41, 55);
+      pdf.setFillColor(248, 251, 254);
+      pdf.roundedRect(14, 70, pageWidth - 28, 62, 4, 4, 'F');
+      pdf.setDrawColor(215, 225, 234);
+      pdf.roundedRect(14, 70, pageWidth - 28, 62, 4, 4, 'S');
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(12);
+      pdf.text('Identificação do responsável', 20, 84);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(11);
+      pdf.text(`Nome: ${estado.responsavel.nome}`, 20, 97);
+      pdf.text(`Matrícula: ${estado.responsavel.matricula}`, 20, 106);
+      pdf.text(`Cargo: ${estado.responsavel.cargo}`, 20, 115);
+      pdf.text(`Data de emissão: ${new Date().toLocaleString('pt-BR')}`, 20, 124);
+
+      pdf.setFillColor(248, 251, 254);
+      pdf.roundedRect(14, 145, pageWidth - 28, 45, 4, 4, 'F');
+      pdf.roundedRect(14, 145, pageWidth - 28, 45, 4, 4, 'S');
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Resumo do documento', 20, 159);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Total de componentes: ${estado.componentes.length}`, 20, 172);
+      pdf.text('Cada componente será apresentado em seção própria, com fotos ajustadas à página.', 20, 181);
+      adicionarRodapePagina(pdf, pagina);
+
+      // páginas dos componentes
       for (let i = 0; i < estado.componentes.length; i++) {
         const comp = estado.componentes[i];
+        pdf.addPage();
+        pagina += 1;
+        adicionarCabecalhoPagina(pdf, 'Relatório Fotográfico', `Componente ${i + 1}`);
+        adicionarRodapePagina(pdf, pagina);
 
-        if (y > pageHeight - 30) {
-          pdf.addPage();
-          y = 18;
-        }
-
+        let y = 34;
         pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(13);
+        pdf.setFontSize(15);
         pdf.text(`Componente ${i + 1}: ${comp.nome}`, margem, y);
         y += 8;
 
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(10);
-        pdf.text(`Fotos: ${comp.fotos.length}`, margem, y);
-        y += 6;
+        pdf.setTextColor(100, 116, 139);
+        pdf.text(`Quantidade de fotos: ${comp.fotos.length} | Registro: ${comp.criadoEm}`, margem, y);
+        pdf.setTextColor(31, 41, 55);
+        y += 8;
 
-        for (const foto of comp.fotos) {
+        for (let j = 0; j < comp.fotos.length; j++) {
+          const foto = comp.fotos[j];
           const img = await carregarImagem(foto.dataUrl);
           const maxW = pageWidth - (margem * 2);
-          const maxH = 80;
+          const maxH = 105;
           let w = img.width;
           let h = img.height;
           const proporcao = Math.min(maxW / w, maxH / h);
           w *= proporcao;
           h *= proporcao;
 
-          if (y + h + 14 > pageHeight - margem) {
+          if (y + h + 28 > pageHeight - 18) {
             pdf.addPage();
-            y = 18;
+            pagina += 1;
+            adicionarCabecalhoPagina(pdf, 'Relatório Fotográfico', `Componente ${i + 1} (continuação)`);
+            adicionarRodapePagina(pdf, pagina);
+            y = 34;
           }
 
+          pdf.setDrawColor(215, 225, 234);
+          pdf.roundedRect(margem - 1, y - 1, w + 2, h + 2, 3, 3, 'S');
           pdf.addImage(foto.dataUrl, obterFormatoImagem(foto.dataUrl), margem, y, w, h, undefined, 'FAST');
-          y += h + 8;
+          y += h + 7;
+
+          pdf.setFont('helvetica', 'italic');
+          pdf.setFontSize(9);
+          pdf.setTextColor(71, 85, 105);
+          pdf.text(`Foto ${j + 1}${foto.nome ? ` - ${foto.nome}` : ''}`, margem, y);
+          pdf.setTextColor(31, 41, 55);
+          y += 8;
         }
-
-        y += 4;
       }
 
-      pdf.setFont('helvetica', 'italic');
-      pdf.setFontSize(10);
-      if (y > pageHeight - 20) {
-        pdf.addPage();
-        y = 18;
-      }
-      pdf.text(`Assinatura do responsável: ${estado.responsavel.nome}`, margem, y + 8);
       return pdf.output('blob');
     }
 
@@ -547,7 +640,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `relatorio_${(estado.responsavel.matricula || 'sem_matricula')}_${Date.now()}.pdf`;
+        a.download = `relatorio_fotografico_${(estado.responsavel.matricula || 'sem_matricula')}_${Date.now()}.pdf`;
         a.click();
         URL.revokeObjectURL(url);
         mostrarStatus('PDF gerado com sucesso.', 'ok');
@@ -557,47 +650,7 @@
       }
     }
 
-    async function salvarNoCloudflare() {
-      try {
-        mostrarStatus('Enviando relatório para o Cloudflare...', 'ok');
-
-        const payload = {
-          nome: estado.responsavel.nome,
-          matricula: estado.responsavel.matricula,
-          cargo: estado.responsavel.cargo,
-          data_criacao: new Date().toISOString(),
-          status: 'RASCUNHO',
-          componentes: estado.componentes.map(comp => ({
-            nome_componente: comp.nome,
-            fotos: comp.fotos.map(f => ({
-              nome: f.nome,
-              tipo: f.tipo,
-              dataUrl: f.dataUrl
-            }))
-          }))
-        };
-
-        const resposta = await fetch(`${API_URL}/api/relatorios`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const dados = await resposta.json().catch(() => ({}));
-
-        if (!resposta.ok) {
-          throw new Error(dados?.message || 'Falha ao salvar no Cloudflare.');
-        }
-
-        mostrarStatus(`Relatório salvo no Cloudflare com sucesso${dados?.id ? ` (ID: ${dados.id})` : ''}.`, 'ok');
-      } catch (erro) {
-        console.error(erro);
-        mostrarStatus(`Erro ao salvar no Cloudflare: ${erro.message}`, 'erro');
-      }
-    }
-
     document.getElementById('btnBaixarPdf').addEventListener('click', baixarPdf);
-    document.getElementById('btnSalvarCloudflare').addEventListener('click', salvarNoCloudflare);
   </script>
 </body>
 </html>
