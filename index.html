@@ -1,881 +1,603 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Serviços de Manutenção</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gerador de Relatório Fotográfico</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <style>
+    :root{
+      --azul:#0097CE;
+      --azul-dark:#0079A6;
+      --laranja:#F36F21;
+      --bg:#eef5f9;
+      --card:#ffffff;
+      --texto:#1f2937;
+      --borda:#dbe3ea;
+      --ok:#16a34a;
+      --erro:#dc2626;
+    }
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-
-<style>
-  :root {
-    --energisa-blue: #0097CE;
-    --energisa-blue-dark: #0079a6;
-    --energisa-orange: #F36F21;
-    --bg-soft: #eef6fa;
-    --bg-white: #ffffff;
-    --text-dark: #333;
-  }
-
-  body {
-    font-family: "Segoe UI", Roboto, sans-serif;
-    background: var(--bg-soft);
-    margin: 0;
-  }
-
-  .card {
-    max-width: 900px;
-    margin: 30px auto;
-    padding: 28px;
-    background: var(--bg-white);
-    border-radius: 14px;
-    box-shadow: 0 6px 26px rgba(0,0,0,0.10);
-    border-top: 6px solid var(--energisa-orange);
-  }
-
-  h1 {
-    text-align: center;
-    color: var(--energisa-blue-dark);
-    margin-bottom: 20px;
-    font-size: 26px;
-    font-weight: 800;
-  }
-
-  form { display: grid; gap: 15px; }
-
-  label { font-weight: 600; margin-bottom: 4px; display:block; }
-
-  input, select, textarea {
-    width: 100%;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #cfd8dc;
-    font-size: 15px;
-    box-sizing: border-box;
-  }
-
-  .row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px;
-  }
-
-  @media(max-width: 720px) {
-    .row { grid-template-columns: 1fr; }
-  }
-
-  button {
-    background: var(--energisa-blue);
-    color: white;
-    border: none;
-    padding: 14px;
-    font-size: 16px;
-    font-weight: 700;
-    border-radius: 10px;
-    cursor: pointer;
-  }
-
-  .menu {
-    display: grid;
-    gap: 12px;
-    margin-bottom: 18px;
-  }
-
-  .menu button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    font-size: 16px;
-  }
-
-  .menu .btn-viva { background: var(--energisa-blue); }
-  .menu .btn-morta { background: var(--energisa-orange); }
-
-  .menu .sub {
-    text-align: center;
-    color: #555;
-    font-size: 14px;
-    margin-top: -6px;
-  }
-
-  .geo-box {
-    background: var(--energisa-blue);
-    padding: 14px;
-    border-radius: 12px;
-    color: white;
-    margin-top: 10px;
-  }
-
-  .geo-row {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 12px;
-    align-items: center;
-  }
-
-  #gps {
-    background: #ffffff;
-    border: none;
-    padding: 12px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 15px;
-    color: var(--text-dark);
-  }
-
-  #btnGeo {
-    background: var(--energisa-orange);
-    padding: 12px 16px;
-    border-radius: 10px;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-    color: #fff;
-    white-space: nowrap;
-  }
-
-  #overlayEnvio {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.45);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-  }
-
-  #overlayEnvio .box {
-    background: #fff;
-    padding: 30px 40px;
-    border-radius: 14px;
-    text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-  }
-
-  #overlayEnvio .spinner {
-    width: 42px;
-    height: 42px;
-    border: 4px solid #e0e0e0;
-    border-top: 4px solid #0097CE;
-    border-radius: 50%;
-    margin: 0 auto 15px;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  #previewBox img {
-    max-height: 120px;
-    border-radius: 8px;
-    object-fit: cover;
-    display: block;
-  }
-
-  .hidden { display: none !important; }
-
-  .mode-badge {
-    display: inline-block;
-    margin: 0 auto 10px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: #eef6fa;
-    border: 1px solid #cfe6f2;
-    color: #0b5c7d;
-    font-weight: 700;
-    font-size: 13px;
-  }
-
-  .preview-item {
-    position: relative;
-    display: inline-block;
-  }
-
-  .preview-remove {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    border: none;
-    background: #dc3545;
-    color: #fff;
-    font-weight: 700;
-    cursor: pointer;
-    padding: 0;
-    line-height: 26px;
-    text-align: center;
-    box-shadow: 0 3px 10px rgba(0,0,0,.25);
-  }
-
-  .acoes-arquivo {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-  }
-
-  .acoes-arquivo button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  #btnCamera { background: var(--energisa-orange); }
-  #btnGaleria { background: var(--energisa-blue); }
-</style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:Segoe UI,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--texto);
+      padding:18px;
+    }
+    .container{max-width:980px;margin:0 auto}
+    .card{
+      background:var(--card);
+      border-radius:18px;
+      padding:24px;
+      box-shadow:0 8px 24px rgba(0,0,0,.08);
+      border-top:6px solid var(--laranja);
+    }
+    h1{
+      text-align:center;
+      color:var(--azul-dark);
+      margin-bottom:8px;
+      font-size:30px;
+    }
+    .subtitulo{
+      text-align:center;
+      color:#64748b;
+      margin-bottom:24px;
+    }
+    .hidden{display:none !important}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    @media(max-width:760px){
+      .row,.row-3{grid-template-columns:1fr}
+      .card{padding:18px}
+      h1{font-size:25px}
+    }
+    label{display:block;font-weight:700;margin-bottom:6px}
+    input, textarea, select{
+      width:100%;padding:12px;border:1px solid var(--borda);border-radius:12px;font-size:15px;background:#fff;
+    }
+    textarea{resize:vertical;min-height:90px}
+    button{
+      border:none;border-radius:12px;padding:13px 16px;font-size:15px;font-weight:700;cursor:pointer;
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    }
+    .btn-principal{background:var(--azul);color:#fff}
+    .btn-principal:hover{background:var(--azul-dark)}
+    .btn-secundario{background:var(--laranja);color:#fff}
+    .btn-secundario:hover{filter:brightness(.95)}
+    .btn-neutro{background:#64748b;color:#fff}
+    .btn-neutro:hover{filter:brightness(.95)}
+    .btn-sucesso{background:var(--ok);color:#fff}
+    .btn-erro{background:var(--erro);color:#fff}
+    .acoes-topo{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+    .step-title{font-size:22px;margin-bottom:18px;color:var(--azul-dark)}
+    .help{font-size:13px;color:#64748b;margin-top:6px}
+    .bloco{border:1px solid var(--borda);border-radius:16px;padding:18px;background:#f8fbfd;margin-top:18px}
+    .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:14px}
+    .thumb{
+      border:1px solid var(--borda);border-radius:14px;padding:8px;background:#fff;position:relative;
+    }
+    .thumb img{width:100%;height:110px;object-fit:cover;border-radius:10px;display:block}
+    .thumb button{
+      position:absolute;top:8px;right:8px;padding:6px 8px;border-radius:8px;font-size:12px;background:rgba(220,38,38,.95);color:#fff;
+    }
+    .lista-componentes{display:grid;gap:12px;margin-top:18px}
+    .item{
+      border:1px solid var(--borda);border-radius:14px;padding:16px;background:#fff;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;
+    }
+    .item h3{font-size:18px;color:var(--azul-dark);margin-bottom:6px}
+    .item small{color:#64748b}
+    .badge{display:inline-block;background:#e0f2fe;color:#075985;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700}
+    .status{
+      margin-top:16px;padding:12px 14px;border-radius:12px;font-weight:600;display:none;
+    }
+    .status.ok{display:block;background:#ecfdf5;color:#166534;border:1px solid #bbf7d0}
+    .status.erro{display:block;background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+    .menu{display:grid;gap:14px;max-width:450px;margin:0 auto}
+    .menu button{width:100%}
+    .footer-acoes{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
+    .resumo{display:grid;gap:8px;margin-top:8px}
+    .resumo div{padding:10px 12px;border-radius:10px;background:#fff;border:1px solid var(--borda)}
+    .muted{color:#64748b}
+  </style>
 </head>
-
 <body>
-  <div id="overlayEnvio">
-    <div class="box">
-      <div class="spinner"></div>
-      <strong>Enviando registro…</strong>
-      <div style="font-size:14px; margin-top:6px; color:#555">
-        Aguarde alguns segundos
-      </div>
+  <div class="container">
+    <div class="card">
+      <h1>Relatório Fotográfico</h1>
+      <p class="subtitulo">Preencha os dados do responsável, adicione componentes com fotos e escolha se quer baixar o PDF ou salvar no Cloudflare.</p>
+
+      <div id="statusMsg" class="status"></div>
+
+      <section id="telaInicial">
+        <div class="menu">
+          <button id="btnNovoRelatorio" type="button" class="btn-principal">
+            <i class="bi bi-file-earmark-plus-fill"></i>
+            Novo relatório
+          </button>
+          <button id="btnVoltarInicio" type="button" class="btn-neutro hidden">
+            <i class="bi bi-arrow-left"></i>
+            Voltar
+          </button>
+        </div>
+      </section>
+
+      <section id="telaDados" class="hidden">
+        <div class="acoes-topo">
+          <button type="button" class="btn-neutro" id="btnVoltarDados"><i class="bi bi-arrow-left"></i> Voltar</button>
+        </div>
+        <h2 class="step-title">1. Dados do responsável</h2>
+        <form id="formResponsavel">
+          <div style="margin-bottom:14px">
+            <label for="nome">Nome *</label>
+            <input type="text" id="nome" required autocomplete="off" />
+          </div>
+          <div class="row">
+            <div>
+              <label for="matricula">Matrícula *</label>
+              <input type="text" id="matricula" required autocomplete="off" />
+            </div>
+            <div>
+              <label for="cargo">Cargo *</label>
+              <input type="text" id="cargo" required autocomplete="off" />
+            </div>
+          </div>
+          <div class="footer-acoes">
+            <button type="submit" class="btn-principal"><i class="bi bi-arrow-right-circle-fill"></i> Continuar</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="telaRelatorio" class="hidden">
+        <div class="acoes-topo">
+          <button type="button" class="btn-neutro" id="btnVoltarRelatorio"><i class="bi bi-arrow-left"></i> Voltar ao início</button>
+        </div>
+
+        <h2 class="step-title">2. Adicionar componente e foto(s)</h2>
+
+        <div class="bloco">
+          <div class="resumo">
+            <div><strong>Nome:</strong> <span id="resumoNome">-</span></div>
+            <div><strong>Matrícula:</strong> <span id="resumoMatricula">-</span></div>
+            <div><strong>Cargo:</strong> <span id="resumoCargo">-</span></div>
+          </div>
+        </div>
+
+        <div class="bloco">
+          <form id="formComponente">
+            <div style="margin-bottom:14px">
+              <label for="nomeComponente">Componente *</label>
+              <input type="text" id="nomeComponente" placeholder="Ex.: Isolador, cruzeta, chave fusível" required />
+            </div>
+
+            <div class="row">
+              <div>
+                <label>Foto pela câmera</label>
+                <button type="button" class="btn-principal" id="btnCamera"><i class="bi bi-camera-fill"></i> Tirar foto</button>
+                <input id="inputCamera" type="file" accept="image/*" capture="environment" multiple class="hidden" />
+              </div>
+              <div>
+                <label>Fotos da galeria</label>
+                <button type="button" class="btn-secundario" id="btnGaleria"><i class="bi bi-images"></i> Escolher fotos</button>
+                <input id="inputGaleria" type="file" accept="image/*" multiple class="hidden" />
+              </div>
+            </div>
+
+            <p class="help">Você pode adicionar várias fotos para o mesmo componente e remover qualquer imagem antes de salvar.</p>
+
+            <div id="previewFotos" class="thumbs"></div>
+
+            <div class="footer-acoes">
+              <button type="submit" class="btn-principal"><i class="bi bi-plus-circle-fill"></i> Salvar componente</button>
+              <button type="button" class="btn-neutro" id="btnLimparFotos"><i class="bi bi-trash3"></i> Limpar fotos</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="bloco">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <h3>Componentes adicionados</h3>
+            <span class="badge" id="badgeQtd">0 componente(s)</span>
+          </div>
+          <div id="listaComponentes" class="lista-componentes">
+            <p class="muted">Nenhum componente adicionado até o momento.</p>
+          </div>
+        </div>
+
+        <div class="footer-acoes">
+          <button type="button" class="btn-secundario hidden" id="btnFinalizar"><i class="bi bi-check2-circle"></i> Não, finalizar relatório</button>
+        </div>
+      </section>
+
+      <section id="telaFinal" class="hidden">
+        <div class="acoes-topo">
+          <button type="button" class="btn-neutro" id="btnVoltarEdicao"><i class="bi bi-arrow-left"></i> Voltar para edição</button>
+        </div>
+        <h2 class="step-title">3. Deseja fazer o download do relatório?</h2>
+        <p class="muted">Se você baixar agora, o PDF será gerado no navegador. Se não quiser baixar, os dados serão enviados para o seu backend no Cloudflare.</p>
+
+        <div class="bloco">
+          <div class="resumo">
+            <div><strong>Responsável:</strong> <span id="finalNome">-</span></div>
+            <div><strong>Total de componentes:</strong> <span id="finalQtd">0</span></div>
+          </div>
+        </div>
+
+        <div class="footer-acoes">
+          <button type="button" id="btnBaixarPdf" class="btn-principal"><i class="bi bi-file-earmark-pdf-fill"></i> Baixar PDF</button>
+          <button type="button" id="btnSalvarCloudflare" class="btn-secundario"><i class="bi bi-cloud-arrow-up-fill"></i> Salvar no Cloudflare</button>
+        </div>
+      </section>
     </div>
   </div>
 
-  <div class="card">
-    <h1>FORMULÁRIO - SERVIÇOS</h1>
-
-    <div id="menuTipo" class="menu">
-      <button type="button" class="btn-viva" id="btnLinhaViva">
-        <i class="bi bi-lightning-charge-fill"></i> Linha Viva
-      </button>
-      <button type="button" class="btn-morta" id="btnLinhaMorta">
-        <i class="bi bi-tools"></i> Linha Morta
-      </button>
-      <div class="sub">Escolha o tipo de serviço para abrir o formulário</div>
-    </div>
-
-    <div id="modeBadge" class="mode-badge hidden"></div>
-
-    <div id="acoesTopo" class="hidden" style="display:flex; justify-content:flex-start; margin: 10px 0 14px;">
-      <button type="button" id="btnVoltarMenu" style="background:#6c757d;">
-        <i class="bi bi-arrow-left"></i> Voltar
-      </button>
-    </div>
-
-    <form id="llForm" class="hidden" autocomplete="off" enctype="multipart/form-data">
-
-      <div class="row">
-        <div>
-          <label>Regional *</label>
-          <select id="regional" name="regional" required>
-            <option value="">Selecione...</option>
-            <option value="LESTE">LESTE</option>
-            <option value="CENTRO">CENTRO</option>
-            <option value="OESTE">OESTE</option>
-          </select>
-        </div>
-
-        <div>
-          <label>Base *</label>
-          <select id="base" name="base" required disabled>
-            <option value="">Selecione a regional primeiro...</option>
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label>Equipe *</label>
-        <select id="equipe" name="equipe" required disabled>
-          <option value="">Selecione a base primeiro...</option>
-        </select>
-      </div>
-
-      <div>
-        <label>Data *</label>
-        <input type="date" id="data" name="data" required>
-      </div>
-
-      <div>
-        <label>UC/Tombamento/Componente *</label>
-        <input id="componente" name="componente" required>
-      </div>
-
-      <div id="blocoLinhaMorta" class="hidden">
-        <div class="row">
-          <div>
-            <label>Tipo de rede *</label>
-            <select id="tipoRede" name="tipoRede">
-              <option value="">Selecione...</option>
-              <option value="BT">Baixa Tensão</option>
-              <option value="MT">Média Tensão</option>
-            </select>
-          </div>
-
-          <div>
-            <label>Rede Precária? *</label>
-            <select id="redePrecaria" name="redePrecaria">
-              <option value="">Selecione...</option>
-              <option>Sim</option>
-              <option>Não</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="row">
-          <div>
-            <label>Quantidade de vãos? *</label>
-            <input id="qtdVaos" name="qtdVaos" type="number" min="0" step="1" placeholder="Ex: 3">
-          </div>
-
-          <div>
-            <label>Necessidade de Poda? *</label>
-            <select id="necessidadePoda" name="necessidadePoda">
-              <option value="">Selecione...</option>
-              <option>Sim</option>
-              <option>Não</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label>Tipos de serviços *</label>
-          <select id="servicoLM" name="servicoLM">
-            <option value="">Selecione...</option>
-            <option value="PODA">PODA</option>
-            <option value="REFORMA_DE_REDE">REFORMA DE REDE</option>
-            <option value="AMBOS">AMBOS</option>
-          </select>
-        </div>
-      </div>
-
-      <div id="blocoLinhaViva" class="row">
-        <div>
-          <label>Serviço LL *</label>
-          <select id="servicoll" name="servicoll" required>
-            <option value="">Selecione...</option>
-            <option>Substituição de isolador pino</option>
-            <option>Substituição de isolador de ancoragem</option>
-            <option>Instalação de cabo protegido / bypass</option>
-            <option>Reparo com emenda pré-formada</option>
-            <option>Ponto quente em bucha secundária</option>
-            <option>Abertura de jumper sem carga</option>
-            <option>Fechamento de jumper sem carga</option>
-            <option>Substituir chave fusível / faca</option>
-            <option>Retirar by-pass</option>
-            <option>Instalação de espaçadores</option>
-            <option>Amarração Grinfa</option>
-            <option>Retirar ninho</option>
-            <option>Retirar pipa/objetos</option>
-            <option>Instalação de elastômetro</option>
-            <option>Poda de árvore em contato</option>
-            <option>Mudança de TAP</option>
-            <option>Conectores Estribo/GLV</option>
-          </select>
-        </div>
-
-        <div>
-          <label>Medidor</label>
-          <input id="medidor" name="medidor">
-        </div>
-      </div>
-
-      <div class="row">
-        <div>
-          <label>Condutor</label>
-          <input id="condutor" name="condutor">
-        </div>
-
-        <div>
-          <label>Alma de Aço *</label>
-          <select id="almaaco" name="almaaco" required>
-            <option>Sim</option>
-            <option>Não</option>
-            <option>Não Verificado</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="row">
-        <div>
-          <label>Acesso caminhão *</label>
-          <select id="acessocaminhao" name="acessocaminhao" required>
-            <option>Sim</option>
-            <option>Não</option>
-            <option>Não precisa</option>
-          </select>
-        </div>
-
-        <div>
-          <label>Endereço *</label>
-          <input id="endereco" name="endereco" required>
-        </div>
-      </div>
-
-      <div>
-        <label>Arquivo + Localização *</label>
-
-        <div class="acoes-arquivo">
-          <button type="button" id="btnCamera">
-            <i class="bi bi-camera-fill"></i> Tirar Foto
-          </button>
-
-          <button type="button" id="btnGaleria">
-            <i class="bi bi-images"></i> Escolher da Galeria
-          </button>
-        </div>
-
-        <input id="file" name="arquivos" type="file" accept="image/*" multiple required style="display:none;">
-        <input id="fileCamera" type="file" accept="image/*" capture="environment" multiple style="display:none;">
-        <input id="fileGaleria" type="file" accept="image/*" multiple style="display:none;">
-
-        <div id="previewBox" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;"></div>
-
-        <div class="geo-box">
-          <div class="geo-row">
-            <button type="button" id="btnGeo">
-              <i class="bi bi-geo-alt-fill"></i> Localizar
-            </button>
-            <input id="gps" name="gps" readonly placeholder="Coordenadas aparecerão aqui" required />
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <label>Observação</label>
-        <textarea id="observacao" name="observacao" rows="3"></textarea>
-      </div>
-
-      <button id="btnSubmit" type="submit">Enviar Registro</button>
-    </form>
-  </div>
-
-<script>
-/* =============================================================
-   ELEMENTOS GERAIS
-   ============================================================= */
-const acoesTopo = document.getElementById("acoesTopo");
-const btnVoltarMenu = document.getElementById("btnVoltarMenu");
-const menuTipo = document.getElementById("menuTipo");
-const form = document.getElementById("llForm");
-const badge = document.getElementById("modeBadge");
-
-const regionalEl = document.getElementById("regional");
-const baseEl = document.getElementById("base");
-const equipeEl = document.getElementById("equipe");
-
-const blocoViva = document.getElementById("blocoLinhaViva");
-const blocoMorta = document.getElementById("blocoLinhaMorta");
-
-const tipoRedeEl = document.getElementById("tipoRede");
-const servicoLMEl = document.getElementById("servicoLM");
-const servicollEl = document.getElementById("servicoll");
-const redePrecariaEl = document.getElementById("redePrecaria");
-const qtdVaosEl = document.getElementById("qtdVaos");
-const necessidadePodaEl = document.getElementById("necessidadePoda");
-
-/* =============================================================
-   ARQUIVOS / CAMERA / GALERIA
-   ============================================================= */
-const fileInput = document.getElementById("file");
-const fileCamera = document.getElementById("fileCamera");
-const fileGaleria = document.getElementById("fileGaleria");
-const btnCamera = document.getElementById("btnCamera");
-const btnGaleria = document.getElementById("btnGaleria");
-const previewBox = document.getElementById("previewBox");
-
-let arquivosSelecionados = [];
-let tipoServicoSelecionado = "";
-
-btnCamera.addEventListener("click", () => fileCamera.click());
-btnGaleria.addEventListener("click", () => fileGaleria.click());
-
-fileCamera.addEventListener("change", (e) => {
-  adicionarArquivos(e.target.files);
-  fileCamera.value = "";
-});
-
-fileGaleria.addEventListener("change", (e) => {
-  adicionarArquivos(e.target.files);
-  fileGaleria.value = "";
-});
-
-function adicionarArquivos(files) {
-  for (const f of files) {
-    if (f && f.type && f.type.startsWith("image/")) {
-      arquivosSelecionados.push(f);
-    }
-  }
-  sincronizarInputPrincipal();
-  renderPreview();
-}
-
-function sincronizarInputPrincipal() {
-  const dt = new DataTransfer();
-  arquivosSelecionados.forEach(f => dt.items.add(f));
-  fileInput.files = dt.files;
-}
-
-function renderPreview() {
-  previewBox.innerHTML = "";
-
-  arquivosSelecionados.forEach((f, index) => {
-    const wrap = document.createElement("div");
-    wrap.className = "preview-item";
-
-    const img = document.createElement("img");
-    img.src = URL.createObjectURL(f);
-
-    const btnRemover = document.createElement("button");
-    btnRemover.type = "button";
-    btnRemover.className = "preview-remove";
-    btnRemover.textContent = "×";
-
-    btnRemover.addEventListener("click", () => {
-      arquivosSelecionados.splice(index, 1);
-      sincronizarInputPrincipal();
-      renderPreview();
-    });
-
-    wrap.appendChild(img);
-    wrap.appendChild(btnRemover);
-    previewBox.appendChild(wrap);
-  });
-}
-
-function limparArquivos() {
-  arquivosSelecionados = [];
-  fileInput.value = "";
-  fileCamera.value = "";
-  fileGaleria.value = "";
-  sincronizarInputPrincipal();
-  previewBox.innerHTML = "";
-}
-
-/* =============================================================
-   BOTÃO VOLTAR
-   ============================================================= */
-function voltarParaMenu() {
-  form.reset();
-  limparArquivos();
-  baseEl.disabled = true;
-  equipeEl.disabled = true;
-  tipoServicoSelecionado = "";
-
-  form.classList.add("hidden");
-  badge.classList.add("hidden");
-  acoesTopo.classList.add("hidden");
-  menuTipo.classList.remove("hidden");
-}
-
-btnVoltarMenu.onclick = voltarParaMenu;
-
-/* =============================================================
-   BASES POR REGIONAL
-   ============================================================= */
-const basesPorRegional = {
-  "LESTE": ["Cruz do Peixe","Cabedelo","Mangabeira","Paratibe","Santa Rita","João Pessoa","Mamanguape","Sapé","Itabaiana","Caaporã"],
-  "CENTRO": ["Campina Grande","Borborema","Esperança","Guarabira","Monteiro"],
-  "OESTE": ["Itaporanga","Patos","Sousa","Catolé do Rocha","Princesa Isabel","Cajazeiras"]
-};
-
-/* =============================================================
-   EQUIPES POR BASE
-   ============================================================= */
-const equipesPorBase = {
-  "Cruz do Peixe": ["CPXCE01","CPXCE03","CPXME01","CPXME02","CPXSN02","CPXML01","CPXSN01","CPXSN02","CPXSN03","CPXSN52","JPSINS04","SUPERVISÃO"],
-  "Cabedelo": ["CBDCE01","CBDCE02","CBDCE03","CBDCE04","CBDCR01","CBDSN01","CBDSN02","CBDSN05","CBDSN06","CBDML01","CBDLL01","CBDSN70","SUPERVISÃO"],
-  "Mangabeira": ["MGBCE01","MGBCE02","MGBCE03","MGBCE04","MGBCR01","MGBCR03","MGBSN01","MGBSN02","MGBML01","MGBSN50","MGBSN70","JPSINS03","SUPERVISÃO"],
-  "Paratibe": ["PRTCE01","PRTCR03","PRTSN02","PRTML01","PRTCR01","SUPERVISÃO"],
-  "Santa Rita": ["STRCE01","STRCE03","STRCE04","STRCR01","STRCR02","STRCR03","STRCR04","STRCR05","STRCR06","STRSN01","STRML01","LCNSN01","JPSINS02","SUPERVISÃO"],
-  "João Pessoa": ["JPSLL01","JPSML01","JPSML02","JPSCE01","JPSCE02","JPSCE03","JPSCE04","JPSCE05","JPSCE06","JPSCE07","JPSCE08","JPSCE09","JPSCE12","JPSCE13","JPSCE14","JPSCE15","JPSCE16","JPSME01","JPSME02","JPSME03","JPSSN04","JPSSN05","JPSINS04","SUPERVISÃO"],
-  "Mamanguape": ["MAAML01","MAASN01","MAMCR01","MAMMO01","MAMSN01","MAMSN03","MAMINS1","SUPERVISÃO"],
-  "Sapé": ["SPECR01","SPECR02","SPESN01","SPESN02","SPEML04","SUPERVISÃO"],
-  "Itabaiana": ["ITAML01","ITASN01","ITASN02","ITASN03","ITASN05","ITASN70","INGSN01","INGSN02","ITASN03","SUPERVISÃO"],
-  "Caaporã": ["CAASN01","CAASN02","CAASN03","CAASN04","CAASN70","SUPERVISÃO"],
-
-  "Borborema": ["CGDCE02","CGDCX01","CGDME04","CGDME05","CGDMO03","CGDMO04","CGDMO05","CGDMO06","CGDMO07","CGDMO10","CGDSN01","CGDSN02","CGDSN03","CGDSN04","CGDSN05","CGDSN06","CGDSN07","GLTSN01","ABRSN02","ABRSN50","ABRSN51","LGSSN01","CGDSN71","QMDSN01","SUPERVISÃO"],
-  "Campina Grande": ["BQRSN01","BQRSN03","BQRSN50","ACTSN01","JZRML01","JZRSN02","SLDSN01","UBZSN01","QMDSN50","AROSN01","AROSN50","SUPERVISÃO"],
-  "Esperança": ["ESPBT03","ESPCE01","ESPML01","ESPSN01","CTESN01","SUPERVISÃO"],
-  "Guarabira": ["SLNSN01","SLNCE01","GBACE02","GBAME16","GBAMO11","GBAMO12","GBAMO13","GBASN02","GBASN05","GBASN51","GBASN52","GBAML09","GBAML01","ARNSN03","ALGSN01","BLMSN01","ARNSN03","SUPERVISÃO"],
-  "Monteiro": ["MNTMO01","MNTMO02","MNTSN01","MNTSN02","MNTSN50","SMESN01","CMLSN01","MNTLVL01","MNTNL01","SBRSN01","SBRSN02","SBRSN50","JZRML01","JZRSN01","JZRSN02","JZRSN50","SLDSN01","SLDSN50","TPRSN01","SLDSN50","SUPERVISÃO"],
-
-  "Itaporanga": ["CONSN01","ITOCR01","ITOSN01","ITOSN02","PCOSN50","SUPERVISÃO"],
-  "Patos": ["PTSAD02","PTSCE01","PTSCR03","PTSME01","PTSMO01","PTSMO03","PTSSN02","PTSSN03","PTSSN06","TXRSN02","PTSSN57","PTSSN01","PRISN02","PRISN03","SUPERVISÃO"],
-  "Sousa": ["SZACE01","SZAAD03","SZAAD04","SZAAD05","SZAME01","SZAME02","SZAME03","SZAMO05","SZAMO06","SZAML01","SZASN55","SZASN01","URNSN01","SBTSN50","SBTSN03","NAZSN01","SUPERVISÃO"],
-  "Catolé do Rocha": ["CTRMO01","CTRSN03","CTRSN50","SUPERVISÃO"],
-  "Princesa Isabel": ["PRISN02","SUPERVISÃO"],
-  "Cajazeiras": ["CJZCR01","CJZME01","CJZMO03","CJZMO04","CJZSN01","CJZSN03","CJZCR01","SUPERVISÃO"]
-};
-
-/* =============================================================
-   CALCULAR REGIONAL A PARTIR DA BASE
-   ============================================================= */
-function calcularRegionalPorBase(base) {
-  if (!base) return "NÃO ENCONTRADA";
-  for (const regional in basesPorRegional) {
-    if (basesPorRegional[regional].includes(base)) return regional;
-  }
-  return "NÃO ENCONTRADA";
-}
-
-/* =============================================================
-   MENU: LINHA VIVA / LINHA MORTA
-   ============================================================= */
-function abrirFormulario(modo) {
-  tipoServicoSelecionado = modo;
-
-  menuTipo.classList.add("hidden");
-  form.classList.remove("hidden");
-  badge.classList.remove("hidden");
-  acoesTopo.classList.remove("hidden");
-
-  if (modo === "LINHA_VIVA") {
-    badge.textContent = "Modo selecionado: LINHA VIVA";
-    blocoViva.classList.remove("hidden");
-    blocoMorta.classList.add("hidden");
-
-    servicollEl.required = true;
-
-    tipoRedeEl.required = false;
-    servicoLMEl.required = false;
-    redePrecariaEl.required = false;
-    qtdVaosEl.required = false;
-    necessidadePodaEl.required = false;
-
-    tipoRedeEl.value = "";
-    servicoLMEl.value = "";
-    redePrecariaEl.value = "";
-    qtdVaosEl.value = "";
-    necessidadePodaEl.value = "";
-
-    document.getElementById("btnSubmit").textContent = "Enviar Registro (Linha Viva)";
-  } else {
-    badge.textContent = "Modo selecionado: LINHA MORTA";
-    blocoViva.classList.add("hidden");
-    blocoMorta.classList.remove("hidden");
-
-    tipoRedeEl.required = true;
-    servicoLMEl.required = true;
-    redePrecariaEl.required = true;
-    qtdVaosEl.required = true;
-    necessidadePodaEl.required = true;
-
-    servicollEl.required = false;
-    servicollEl.value = "";
-
-    document.getElementById("btnSubmit").textContent = "Enviar Registro (Linha Morta)";
-  }
-}
-
-document.getElementById("btnLinhaViva").onclick = () => abrirFormulario("LINHA_VIVA");
-document.getElementById("btnLinhaMorta").onclick = () => abrirFormulario("LINHA_MORTA");
-
-/* =============================================================
-   DATA ATUAL AUTOMÁTICA
-   ============================================================= */
-document.getElementById("data").value = new Date().toISOString().slice(0,10);
-
-/* =============================================================
-   REGIONAL → BASE
-   ============================================================= */
-regionalEl.addEventListener("change", () => {
-  const regional = regionalEl.value;
-
-  baseEl.innerHTML = "<option value=''>Selecione a base...</option>";
-  equipeEl.innerHTML = "<option value=''>Selecione a base primeiro...</option>";
-  baseEl.disabled = true;
-  equipeEl.disabled = true;
-
-  if (!regional) return;
-
-  basesPorRegional[regional].forEach(b => {
-    const op = document.createElement("option");
-    op.value = b;
-    op.textContent = b;
-    baseEl.appendChild(op);
-  });
-
-  baseEl.disabled = false;
-});
-
-/* =============================================================
-   BASE → EQUIPE
-   ============================================================= */
-baseEl.addEventListener("change", () => {
-  const base = baseEl.value;
-
-  equipeEl.innerHTML = "<option value=''>Selecione...</option>";
-  equipeEl.disabled = true;
-
-  if (!base || !equipesPorBase[base]) return;
-
-  equipesPorBase[base].forEach(eq => {
-    const op = document.createElement("option");
-    op.value = eq;
-    op.textContent = eq;
-    equipeEl.appendChild(op);
-  });
-
-  equipeEl.disabled = false;
-});
-
-/* =============================================================
-   GPS
-   ============================================================= */
-document.getElementById("btnGeo").onclick = () => {
-  const gps = document.getElementById("gps");
-  gps.value = "Capturando localização...";
-
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      gps.value = `${pos.coords.latitude}, ${pos.coords.longitude}`;
-    },
-    () => {
-      gps.value = "Erro ao obter localização";
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 0
-    }
-  );
-};
-
-/* =============================================================
-   COMPRESSÃO DE IMAGEM
-   ============================================================= */
-function compressImage(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onerror = () => reject("Erro ao ler a imagem.");
-
-    reader.onload = e => {
-      const img = new Image();
-
-      img.onerror = () => reject("Erro ao processar a imagem.");
-
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const scale = Math.min(1, 1280 / img.width);
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        canvas.toBlob(blob => {
-          if (!blob) {
-            reject("Erro ao comprimir a imagem.");
-            return;
-          }
-          resolve(blob);
-        }, "image/jpeg", 0.7);
-      };
-
-      img.src = e.target.result;
+  <script>
+    const API_URL = "https://inspecao.pedro-fillype.workers.dev";
+
+    const estado = {
+      responsavel: {
+        nome: "",
+        matricula: "",
+        cargo: ""
+      },
+      componentes: [],
+      fotosTemp: []
     };
 
-    reader.readAsDataURL(file);
-  });
-}
+    const telaInicial = document.getElementById('telaInicial');
+    const telaDados = document.getElementById('telaDados');
+    const telaRelatorio = document.getElementById('telaRelatorio');
+    const telaFinal = document.getElementById('telaFinal');
+    const statusMsg = document.getElementById('statusMsg');
 
-/* =============================================================
-   SUBMIT
-   ============================================================= */
-const SUBMIT_URL = "https://withered-hat-347d.pedro-fillype.workers.dev/submit";
-
-document.getElementById("llForm").onsubmit = async (e) => {
-  e.preventDefault();
-
-  if (!tipoServicoSelecionado) {
-    alert("Selecione: Linha Viva ou Linha Morta.");
-    return;
-  }
-
-  const overlay = document.getElementById("overlayEnvio");
-  const btn = document.getElementById("btnSubmit");
-  overlay.style.display = "flex";
-  btn.disabled = true;
-
-  try {
-    const fd = new FormData();
-    const files = fileInput.files;
-
-    if (!files.length) throw "Selecione ao menos uma imagem.";
-
-    for (let i = 0; i < files.length; i++) {
-      const blob = await compressImage(files[i]);
-      fd.append("arquivos", new File([blob], `foto_${i + 1}.jpg`, { type: "image/jpeg" }));
+    function mostrarStatus(texto, tipo='ok') {
+      statusMsg.textContent = texto;
+      statusMsg.className = `status ${tipo}`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    const camposComuns = [
-      "base","equipe","data","componente",
-      "medidor","condutor","almaaco","acessocaminhao",
-      "endereco","gps","observacao"
-    ];
+    function limparStatus() {
+      statusMsg.textContent = '';
+      statusMsg.className = 'status';
+    }
 
-    for (const id of camposComuns) {
-      const el = document.getElementById(id);
-      if (!el) continue;
+    function irPara(secao) {
+      [telaInicial, telaDados, telaRelatorio, telaFinal].forEach(s => s.classList.add('hidden'));
+      secao.classList.remove('hidden');
+      limparStatus();
+    }
 
-      if (el.required && !String(el.value || "").trim()) {
-        throw `Campo obrigatório não preenchido: ${id}`;
+    document.getElementById('btnNovoRelatorio').addEventListener('click', () => irPara(telaDados));
+    document.getElementById('btnVoltarDados').addEventListener('click', () => irPara(telaInicial));
+    document.getElementById('btnVoltarRelatorio').addEventListener('click', () => {
+      if (confirm('Deseja voltar ao início? Os dados preenchidos nesta tela continuarão no navegador até você recarregar a página.')) {
+        irPara(telaInicial);
       }
+    });
+    document.getElementById('btnVoltarEdicao').addEventListener('click', () => irPara(telaRelatorio));
 
-      fd.append(id, el.value || "");
-    }
+    document.getElementById('formResponsavel').addEventListener('submit', (e) => {
+      e.preventDefault();
+      estado.responsavel.nome = document.getElementById('nome').value.trim();
+      estado.responsavel.matricula = document.getElementById('matricula').value.trim();
+      estado.responsavel.cargo = document.getElementById('cargo').value.trim();
 
-    fd.append("tipo_servico", tipoServicoSelecionado);
-
-    if (tipoServicoSelecionado === "LINHA_VIVA") {
-      if (!servicollEl.value) throw "Selecione o Serviço LL.";
-      fd.append("servicoll", servicollEl.value);
-    } else {
-      if (!tipoRedeEl.value) throw "Selecione o Tipo de rede.";
-      if (!servicoLMEl.value) throw "Selecione o Tipo de serviço (Linha Morta).";
-      if (!redePrecariaEl.value) throw "Selecione: Rede Precária.";
-      if (qtdVaosEl.value === "") throw "Informe: Quantidade de vãos.";
-      if (!necessidadePodaEl.value) throw "Selecione: Necessidade de Poda.";
-
-      fd.append("tipo_rede", tipoRedeEl.value);
-      fd.append("servico_lm", servicoLMEl.value);
-      fd.append("rede_precaria", redePrecariaEl.value);
-      fd.append("qtd_vaos", String(qtdVaosEl.value));
-      fd.append("necessidade_poda", necessidadePodaEl.value);
-    }
-
-    const regionalCalculada = calcularRegionalPorBase(baseEl.value);
-    fd.append("regional", regionalCalculada);
-
-    const r = await fetch(SUBMIT_URL, {
-      method: "POST",
-      body: fd
+      document.getElementById('resumoNome').textContent = estado.responsavel.nome;
+      document.getElementById('resumoMatricula').textContent = estado.responsavel.matricula;
+      document.getElementById('resumoCargo').textContent = estado.responsavel.cargo;
+      irPara(telaRelatorio);
     });
 
-    if (!r.ok) {
-      throw await r.text();
+    const inputCamera = document.getElementById('inputCamera');
+    const inputGaleria = document.getElementById('inputGaleria');
+    const previewFotos = document.getElementById('previewFotos');
+
+    document.getElementById('btnCamera').addEventListener('click', () => inputCamera.click());
+    document.getElementById('btnGaleria').addEventListener('click', () => inputGaleria.click());
+    document.getElementById('btnLimparFotos').addEventListener('click', () => {
+      estado.fotosTemp = [];
+      inputCamera.value = '';
+      inputGaleria.value = '';
+      renderizarPreview();
+    });
+
+    inputCamera.addEventListener('change', (e) => carregarArquivos(e.target.files));
+    inputGaleria.addEventListener('change', (e) => carregarArquivos(e.target.files));
+
+    function arquivoParaDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
     }
 
-    alert("Registro enviado com sucesso!");
+    async function carregarArquivos(fileList) {
+      const files = Array.from(fileList || []).filter(f => f.type.startsWith('image/'));
+      for (const file of files) {
+        const dataUrl = await arquivoParaDataURL(file);
+        estado.fotosTemp.push({
+          nome: file.name,
+          tipo: file.type,
+          dataUrl
+        });
+      }
+      renderizarPreview();
+    }
 
-    form.reset();
-    limparArquivos();
-    baseEl.disabled = true;
-    equipeEl.disabled = true;
+    function renderizarPreview() {
+      previewFotos.innerHTML = '';
+      if (!estado.fotosTemp.length) return;
 
-    form.classList.add("hidden");
-    badge.classList.add("hidden");
-    menuTipo.classList.remove("hidden");
-    acoesTopo.classList.add("hidden");
-    tipoServicoSelecionado = "";
+      estado.fotosTemp.forEach((foto, index) => {
+        const div = document.createElement('div');
+        div.className = 'thumb';
+        div.innerHTML = `
+          <img src="${foto.dataUrl}" alt="Prévia ${index + 1}">
+          <button type="button" onclick="removerFotoTemp(${index})">Remover</button>
+          <div style="margin-top:8px;font-size:12px;color:#475569;word-break:break-word;">${foto.nome || `foto_${index+1}`}</div>
+        `;
+        previewFotos.appendChild(div);
+      });
+    }
 
-  } catch (err) {
-    alert(typeof err === "string" ? err : "Erro ao enviar registro.");
-    console.error(err);
-  } finally {
-    overlay.style.display = "none";
-    btn.disabled = false;
-  }
-};
-</script>
-   <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "ab3e837119ed4133bd616d3b06ef0e25"}'></script><!-- End Cloudflare Web Analytics -->
+    window.removerFotoTemp = function(index) {
+      estado.fotosTemp.splice(index, 1);
+      renderizarPreview();
+    }
+
+    document.getElementById('formComponente').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const nomeComponente = document.getElementById('nomeComponente').value.trim();
+
+      if (!nomeComponente) {
+        mostrarStatus('Informe o nome do componente.', 'erro');
+        return;
+      }
+
+      if (!estado.fotosTemp.length) {
+        mostrarStatus('Adicione pelo menos uma foto para o componente.', 'erro');
+        return;
+      }
+
+      estado.componentes.push({
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        nome: nomeComponente,
+        fotos: [...estado.fotosTemp],
+        criadoEm: new Date().toLocaleString('pt-BR')
+      });
+
+      document.getElementById('nomeComponente').value = '';
+      estado.fotosTemp = [];
+      inputCamera.value = '';
+      inputGaleria.value = '';
+      renderizarPreview();
+      renderizarListaComponentes();
+      mostrarStatus('Componente salvo. Se existir mais componente, adicione agora. Se não existir, finalize o relatório.', 'ok');
+    });
+
+    function renderizarListaComponentes() {
+      const lista = document.getElementById('listaComponentes');
+      const badgeQtd = document.getElementById('badgeQtd');
+      const btnFinalizar = document.getElementById('btnFinalizar');
+
+      badgeQtd.textContent = `${estado.componentes.length} componente(s)`;
+
+      if (!estado.componentes.length) {
+        lista.innerHTML = '<p class="muted">Nenhum componente adicionado até o momento.</p>';
+        btnFinalizar.classList.add('hidden');
+        return;
+      }
+
+      btnFinalizar.classList.remove('hidden');
+      lista.innerHTML = '';
+
+      estado.componentes.forEach((comp, index) => {
+        const item = document.createElement('div');
+        item.className = 'item';
+        item.innerHTML = `
+          <div>
+            <h3>${index + 1}. ${comp.nome}</h3>
+            <small>${comp.fotos.length} foto(s) • Adicionado em ${comp.criadoEm}</small>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button type="button" class="btn-neutro" onclick="verFotosComponente('${comp.id}')"><i class="bi bi-eye"></i> Ver fotos</button>
+            <button type="button" class="btn-erro" onclick="removerComponente('${comp.id}')"><i class="bi bi-trash3"></i> Excluir</button>
+          </div>
+        `;
+        lista.appendChild(item);
+      });
+    }
+
+    window.verFotosComponente = function(id) {
+      const comp = estado.componentes.find(c => c.id === id);
+      if (!comp) return;
+      const janela = window.open('', '_blank');
+      if (!janela) {
+        alert('Não foi possível abrir a visualização. Verifique se o navegador bloqueou a nova janela.');
+        return;
+      }
+      janela.document.write(`
+        <html><head><title>${comp.nome}</title>
+        <style>body{font-family:Arial;padding:20px} .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px} img{width:100%;height:220px;object-fit:cover;border-radius:12px;border:1px solid #ddd}</style>
+        </head><body>
+        <h2>${comp.nome}</h2>
+        <div class="grid">
+          ${comp.fotos.map(f => `<div><img src="${f.dataUrl}" /><div style="margin-top:6px;font-size:12px">${f.nome || ''}</div></div>`).join('')}
+        </div>
+        </body></html>
+      `);
+      janela.document.close();
+    }
+
+    window.removerComponente = function(id) {
+      if (!confirm('Deseja excluir este componente?')) return;
+      estado.componentes = estado.componentes.filter(c => c.id !== id);
+      renderizarListaComponentes();
+      mostrarStatus('Componente removido.', 'ok');
+    }
+
+    document.getElementById('btnFinalizar').addEventListener('click', () => {
+      if (!estado.componentes.length) {
+        mostrarStatus('Adicione pelo menos um componente antes de finalizar.', 'erro');
+        return;
+      }
+      document.getElementById('finalNome').textContent = `${estado.responsavel.nome} (${estado.responsavel.cargo})`;
+      document.getElementById('finalQtd').textContent = String(estado.componentes.length);
+      irPara(telaFinal);
+    });
+
+    function obterFormatoImagem(dataUrl) {
+      if (dataUrl.startsWith('data:image/png')) return 'PNG';
+      return 'JPEG';
+    }
+
+    function carregarImagem(dataUrl) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = dataUrl;
+      });
+    }
+
+    async function gerarPdfBlob() {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margem = 12;
+      let y = 18;
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(18);
+      pdf.text('RELATÓRIO FOTOGRÁFICO', pageWidth / 2, y, { align: 'center' });
+      y += 12;
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(11);
+      const linhasCabecalho = [
+        `Nome: ${estado.responsavel.nome}`,
+        `Matrícula: ${estado.responsavel.matricula}`,
+        `Cargo: ${estado.responsavel.cargo}`,
+        `Data: ${new Date().toLocaleString('pt-BR')}`
+      ];
+      linhasCabecalho.forEach(l => {
+        pdf.text(l, margem, y);
+        y += 7;
+      });
+      y += 4;
+
+      for (let i = 0; i < estado.componentes.length; i++) {
+        const comp = estado.componentes[i];
+
+        if (y > pageHeight - 30) {
+          pdf.addPage();
+          y = 18;
+        }
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(13);
+        pdf.text(`Componente ${i + 1}: ${comp.nome}`, margem, y);
+        y += 8;
+
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(10);
+        pdf.text(`Fotos: ${comp.fotos.length}`, margem, y);
+        y += 6;
+
+        for (const foto of comp.fotos) {
+          const img = await carregarImagem(foto.dataUrl);
+          const maxW = pageWidth - (margem * 2);
+          const maxH = 80;
+          let w = img.width;
+          let h = img.height;
+          const proporcao = Math.min(maxW / w, maxH / h);
+          w *= proporcao;
+          h *= proporcao;
+
+          if (y + h + 14 > pageHeight - margem) {
+            pdf.addPage();
+            y = 18;
+          }
+
+          pdf.addImage(foto.dataUrl, obterFormatoImagem(foto.dataUrl), margem, y, w, h, undefined, 'FAST');
+          y += h + 8;
+        }
+
+        y += 4;
+      }
+
+      pdf.setFont('helvetica', 'italic');
+      pdf.setFontSize(10);
+      if (y > pageHeight - 20) {
+        pdf.addPage();
+        y = 18;
+      }
+      pdf.text(`Assinatura do responsável: ${estado.responsavel.nome}`, margem, y + 8);
+      return pdf.output('blob');
+    }
+
+    async function baixarPdf() {
+      try {
+        mostrarStatus('Gerando PDF, aguarde...', 'ok');
+        const blob = await gerarPdfBlob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `relatorio_${(estado.responsavel.matricula || 'sem_matricula')}_${Date.now()}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        mostrarStatus('PDF gerado com sucesso.', 'ok');
+      } catch (erro) {
+        console.error(erro);
+        mostrarStatus('Erro ao gerar o PDF.', 'erro');
+      }
+    }
+
+    async function salvarNoCloudflare() {
+      try {
+        mostrarStatus('Enviando relatório para o Cloudflare...', 'ok');
+
+        const payload = {
+          nome: estado.responsavel.nome,
+          matricula: estado.responsavel.matricula,
+          cargo: estado.responsavel.cargo,
+          data_criacao: new Date().toISOString(),
+          status: 'RASCUNHO',
+          componentes: estado.componentes.map(comp => ({
+            nome_componente: comp.nome,
+            fotos: comp.fotos.map(f => ({
+              nome: f.nome,
+              tipo: f.tipo,
+              dataUrl: f.dataUrl
+            }))
+          }))
+        };
+
+        const resposta = await fetch(`${API_URL}/api/relatorios`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const dados = await resposta.json().catch(() => ({}));
+
+        if (!resposta.ok) {
+          throw new Error(dados?.message || 'Falha ao salvar no Cloudflare.');
+        }
+
+        mostrarStatus(`Relatório salvo no Cloudflare com sucesso${dados?.id ? ` (ID: ${dados.id})` : ''}.`, 'ok');
+      } catch (erro) {
+        console.error(erro);
+        mostrarStatus(`Erro ao salvar no Cloudflare: ${erro.message}`, 'erro');
+      }
+    }
+
+    document.getElementById('btnBaixarPdf').addEventListener('click', baixarPdf);
+    document.getElementById('btnSalvarCloudflare').addEventListener('click', salvarNoCloudflare);
+  </script>
 </body>
 </html>
