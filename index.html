@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gerador de Relatório de Inspeção de componentes</title>
+  <title>Gerador de Relatório de Inspeção de componente</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <style>
@@ -19,6 +19,7 @@
       --ok:#15803d;
       --erro:#b91c1c;
       --superficie:#f8fbfe;
+      --amarelo:#f9c846;
     }
 
     *{box-sizing:border-box;margin:0;padding:0}
@@ -28,19 +29,48 @@
       color:var(--texto);
       padding:20px;
     }
-    .container{max-width:1050px;margin:0 auto}
+    .container{max-width:1080px;margin:0 auto}
     .card{
       background:var(--card);
-      border-radius:20px;
+      border-radius:22px;
       padding:28px;
       box-shadow:0 14px 35px rgba(15,76,129,.10);
       border-top:7px solid var(--laranja);
+    }
+    .brand-topo{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:14px;
+      margin-bottom:10px;
+    }
+    .brand-icon{
+      width:46px;
+      height:46px;
+      border-radius:14px;
+      background:linear-gradient(180deg, var(--laranja), #ff934f);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#fff;
+      font-size:22px;
+      box-shadow:0 10px 18px rgba(243,111,33,.25);
+    }
+    .brand-text strong{
+      display:block;
+      color:var(--azul-escuro);
+      letter-spacing:.8px;
+      font-size:19px;
+    }
+    .brand-text span{
+      color:#64748b;
+      font-size:12px;
     }
     h1{
       text-align:center;
       color:var(--azul-escuro);
       margin-bottom:6px;
-      font-size:31px;
+      font-size:30px;
       letter-spacing:.2px;
     }
     .subtitulo{
@@ -54,7 +84,8 @@
     @media(max-width:760px){
       .row{grid-template-columns:1fr}
       .card{padding:18px}
-      h1{font-size:26px}
+      h1{font-size:25px}
+      .brand-topo{justify-content:flex-start}
     }
     label{display:block;font-weight:700;margin-bottom:6px;color:#0f172a}
     input, textarea, select{
@@ -65,7 +96,7 @@
       border-color:#7bb4de;
       box-shadow:0 0 0 4px rgba(15,76,129,.08);
     }
-    textarea{resize:vertical;min-height:90px}
+    textarea{resize:vertical;min-height:110px;line-height:1.5}
     button{
       border:none;border-radius:12px;padding:13px 16px;font-size:15px;font-weight:700;cursor:pointer;
       display:inline-flex;align-items:center;justify-content:center;gap:8px;
@@ -99,10 +130,10 @@
     .thumb button{
       position:absolute;top:8px;right:8px;padding:6px 8px;border-radius:8px;font-size:12px;background:rgba(185,28,28,.95);color:#fff;
     }
-    .lista-componentes{display:grid;gap:12px;margin-top:18px}
+    .lista-componentes{display:grid;gap:14px;margin-top:18px}
     .item{
       border:1px solid var(--borda);
-      border-radius:16px;
+      border-radius:18px;
       padding:16px;
       background:#fff;
       display:flex;
@@ -111,9 +142,18 @@
       align-items:center;
       flex-wrap:wrap;
       box-shadow:0 8px 16px rgba(2,36,63,.04);
+      position:relative;
+      overflow:hidden;
+    }
+    .item::before{
+      content:"";
+      position:absolute;
+      left:0;top:0;bottom:0;
+      width:6px;
+      background:linear-gradient(180deg, var(--laranja), #ffb27a);
     }
     .item h3{font-size:18px;color:var(--azul-escuro);margin-bottom:6px}
-    .item small{color:#64748b}
+    .item small{color:#64748b;display:block;line-height:1.5}
     .badge{display:inline-block;background:#e0f2fe;color:#075985;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700}
     .status{
       margin-top:16px;padding:12px 14px;border-radius:12px;font-weight:600;display:none;
@@ -135,12 +175,34 @@
     }
     .hero-pdf h3{color:var(--azul-escuro);margin-bottom:8px}
     .hero-pdf ul{margin-left:18px;color:#475569;line-height:1.6}
+    .campo-grande{margin-top:14px}
+    .obs-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      background:#fff7ed;
+      color:#9a3412;
+      border:1px solid #fed7aa;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:600;
+      margin-top:8px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="card">
-      <h1>Relatório de Inspeções de componentes</h1>
+      <div class="brand-topo">
+        <div class="brand-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+        <div class="brand-text">
+          <strong>ENERGISA</strong>
+          <span>Relatório de Inspeção</span>
+        </div>
+      </div>
+
+      <h1>Relatório de Inspeção de Componentes</h1>
       <p class="subtitulo">Preencha os dados do responsável, adicione componentes com fotos e gere um PDF.</p>
 
       <div id="statusMsg" class="status"></div>
@@ -185,7 +247,7 @@
           <button type="button" class="btn-neutro" id="btnVoltarRelatorio"><i class="bi bi-arrow-left"></i> Voltar ao início</button>
         </div>
 
-        <h2 class="step-title">2. Adicionar componente e foto(s)</h2>
+        <h2 class="step-title">2. Adicionar componente, observação e foto(s)</h2>
 
         <div class="bloco">
           <div class="resumo">
@@ -200,6 +262,12 @@
             <div style="margin-bottom:14px">
               <label for="nomeComponente">Componente *</label>
               <input type="text" id="nomeComponente" placeholder="Ex.: Isolador, cruzeta, chave fusível" required />
+            </div>
+
+            <div class="campo-grande">
+              <label for="observacaoComponente">Observações do componente</label>
+              <textarea id="observacaoComponente" placeholder="Ex.: fissura visível, desgaste, necessidade de substituição, condição do componente, recomendação local..."></textarea>
+              <p class="help">Essa observação ficará vinculada ao componente e aparecerá no PDF logo abaixo do título dele.</p>
             </div>
 
             <div class="row">
@@ -246,7 +314,7 @@
           <button type="button" class="btn-neutro" id="btnVoltarEdicao"><i class="bi bi-arrow-left"></i> Voltar para edição</button>
         </div>
         <h2 class="step-title">3. Gerar relatório profissional em PDF</h2>
-        <p class="muted">O PDF será montado com capa, identificação do responsável, numeração dos componentes, fotos dimensionadas e visual mais corporativo.</p>
+        <p class="muted">O PDF será montado com cabeçalho corporativo, observações vinculadas a cada componente, melhor separação visual e grade de imagens em duas colunas quando houver espaço.</p>
 
         <div class="bloco">
           <div class="resumo">
@@ -258,11 +326,11 @@
         <div class="hero-pdf">
           <h3>O PDF vai incluir</h3>
           <ul>
-            <li>Capa com título do documento e data de emissão</li>
-            <li>Identificação do responsável</li>
-            <li>Seção individual por componente</li>
-            <li>Fotos centralizadas e ajustadas à página</li>
-            <li>Rodapé com paginação</li>
+            <li>Identidade visual inspirada em relatório corporativo Energisa</li>
+            <li>Logo textual no cabeçalho e capa institucional</li>
+            <li>Observação específica em cada componente</li>
+            <li>Separadores visuais entre componentes</li>
+            <li>Duas fotos por linha quando a orientação da imagem permitir</li>
           </ul>
         </div>
 
@@ -305,6 +373,10 @@
       [telaInicial, telaDados, telaRelatorio, telaFinal].forEach(s => s.classList.add('hidden'));
       secao.classList.remove('hidden');
       limparStatus();
+    }
+
+    function formatarObservacao(texto) {
+      return texto && texto.trim() ? texto.trim() : 'Sem observações registradas.';
     }
 
     document.getElementById('btnNovoRelatorio').addEventListener('click', () => irPara(telaDados));
@@ -376,7 +448,7 @@
         div.innerHTML = `
           <img src="${foto.dataUrl}" alt="Prévia ${index + 1}">
           <button type="button" onclick="removerFotoTemp(${index})">Remover</button>
-          <div style="margin-top:8px;font-size:12px;color:#475569;word-break:break-word;">${foto.nome || `foto_${index+1}`}</div>
+          <div style="margin-top:8px;font-size:12px;color:#475569;word-break:break-word;">${foto.nome || `foto_${index + 1}`}</div>
         `;
         previewFotos.appendChild(div);
       });
@@ -385,11 +457,12 @@
     window.removerFotoTemp = function(index) {
       estado.fotosTemp.splice(index, 1);
       renderizarPreview();
-    }
+    };
 
     document.getElementById('formComponente').addEventListener('submit', (e) => {
       e.preventDefault();
       const nomeComponente = document.getElementById('nomeComponente').value.trim();
+      const observacaoComponente = document.getElementById('observacaoComponente').value.trim();
 
       if (!nomeComponente) {
         mostrarStatus('Informe o nome do componente.', 'erro');
@@ -404,11 +477,13 @@
       estado.componentes.push({
         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
         nome: nomeComponente,
+        observacao: observacaoComponente,
         fotos: [...estado.fotosTemp],
         criadoEm: new Date().toLocaleString('pt-BR')
       });
 
       document.getElementById('nomeComponente').value = '';
+      document.getElementById('observacaoComponente').value = '';
       estado.fotosTemp = [];
       inputCamera.value = '';
       inputGaleria.value = '';
@@ -437,9 +512,10 @@
         const item = document.createElement('div');
         item.className = 'item';
         item.innerHTML = `
-          <div>
+          <div style="padding-left:10px; max-width:600px;">
             <h3>${index + 1}. ${comp.nome}</h3>
             <small>${comp.fotos.length} foto(s) • Adicionado em ${comp.criadoEm}</small>
+            <div class="obs-chip"><i class="bi bi-card-text"></i> ${formatarObservacao(comp.observacao)}</div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button type="button" class="btn-neutro" onclick="verFotosComponente('${comp.id}')"><i class="bi bi-eye"></i> Ver fotos</button>
@@ -460,23 +536,31 @@
       }
       janela.document.write(`
         <html><head><title>${comp.nome}</title>
-        <style>body{font-family:Arial;padding:20px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}img{width:100%;height:220px;object-fit:cover;border-radius:12px;border:1px solid #ddd}</style>
+        <style>
+          body{font-family:Arial;padding:20px;background:#f8fafc}
+          h2{color:#08345a}
+          p{color:#475569;line-height:1.6}
+          .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+          .card{background:#fff;border:1px solid #d7e1ea;border-radius:14px;padding:10px}
+          img{width:100%;height:220px;object-fit:cover;border-radius:10px;border:1px solid #ddd}
+        </style>
         </head><body>
         <h2>${comp.nome}</h2>
+        <p><strong>Observação:</strong> ${formatarObservacao(comp.observacao)}</p>
         <div class="grid">
-          ${comp.fotos.map(f => `<div><img src="${f.dataUrl}" /><div style="margin-top:6px;font-size:12px">${f.nome || ''}</div></div>`).join('')}
+          ${comp.fotos.map(f => `<div class="card"><img src="${f.dataUrl}" /><div style="margin-top:6px;font-size:12px">${f.nome || ''}</div></div>`).join('')}
         </div>
         </body></html>
       `);
       janela.document.close();
-    }
+    };
 
     window.removerComponente = function(id) {
       if (!confirm('Deseja excluir este componente?')) return;
       estado.componentes = estado.componentes.filter(c => c.id !== id);
       renderizarListaComponentes();
       mostrarStatus('Componente removido.', 'ok');
-    }
+    };
 
     document.getElementById('btnFinalizar').addEventListener('click', () => {
       if (!estado.componentes.length) {
@@ -502,18 +586,48 @@
       });
     }
 
+    function quebrarTexto(pdf, texto, larguraMaxima) {
+      return pdf.splitTextToSize(texto || '', larguraMaxima);
+    }
+
+    function desenharLogoEnergisa(pdf, x, y, escala = 1) {
+      const corAzul = [15, 76, 129];
+      const corLaranja = [243, 111, 33];
+      const corAmarelo = [249, 200, 70];
+
+      pdf.setFillColor(...corAzul);
+      pdf.roundedRect(x, y, 14 * escala, 14 * escala, 2, 2, 'F');
+      pdf.setFillColor(...corLaranja);
+      pdf.triangle(x + 5 * escala, y + 2 * escala, x + 11 * escala, y + 2 * escala, x + 7 * escala, y + 7 * escala, 'F');
+      pdf.setFillColor(...corAmarelo);
+      pdf.triangle(x + 4 * escala, y + 7 * escala, x + 8 * escala, y + 7 * escala, x + 6 * escala, y + 12 * escala, 'F');
+      pdf.setTextColor(...corAzul);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(13 * escala);
+      pdf.text('ENERGISA', x + 18 * escala, y + 9 * escala);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(7 * escala);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('Relatório fotográfico corporativo', x + 18 * escala, y + 13 * escala);
+      pdf.setTextColor(31, 41, 55);
+    }
+
     function adicionarCabecalhoPagina(pdf, titulo, subtitulo = '') {
       const pageWidth = pdf.internal.pageSize.getWidth();
-      pdf.setFillColor(15, 76, 129);
-      pdf.rect(0, 0, pageWidth, 22, 'F');
-      pdf.setTextColor(255, 255, 255);
+      pdf.setFillColor(248, 251, 254);
+      pdf.rect(0, 0, pageWidth, 24, 'F');
+      pdf.setDrawColor(215, 225, 234);
+      pdf.line(0, 24, pageWidth, 24);
+      desenharLogoEnergisa(pdf, 12, 5, 0.95);
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(16);
-      pdf.text(titulo, 14, 14);
+      pdf.setFontSize(12);
+      pdf.setTextColor(15, 76, 129);
+      pdf.text(titulo, pageWidth - 14, 10, { align: 'right' });
       if (subtitulo) {
         pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(9);
-        pdf.text(subtitulo, pageWidth - 14, 14, { align: 'right' });
+        pdf.setFontSize(8.5);
+        pdf.setTextColor(100, 116, 139);
+        pdf.text(subtitulo, pageWidth - 14, 16, { align: 'right' });
       }
       pdf.setTextColor(31, 41, 55);
     }
@@ -526,9 +640,34 @@
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(9);
       pdf.setTextColor(100, 116, 139);
-      pdf.text(`Página ${paginaAtual}`, pageWidth - 20, pageHeight - 6, { align: 'right' });
+      pdf.text(`Página ${paginaAtual}`, pageWidth - 18, pageHeight - 6, { align: 'right' });
       pdf.text('Relatório fotográfico', 14, pageHeight - 6);
       pdf.setTextColor(31, 41, 55);
+    }
+
+    function adicionarSeparadorComponente(pdf, texto, y, pageWidth) {
+      pdf.setFillColor(248, 251, 254);
+      pdf.roundedRect(14, y, pageWidth - 28, 16, 3, 3, 'F');
+      pdf.setFillColor(243, 111, 33);
+      pdf.rect(14, y, 4, 16, 'F');
+      pdf.setDrawColor(215, 225, 234);
+      pdf.roundedRect(14, y, pageWidth - 28, 16, 3, 3, 'S');
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(12.5);
+      pdf.setTextColor(15, 76, 129);
+      pdf.text(texto, 22, y + 10.5);
+      pdf.setTextColor(31, 41, 55);
+    }
+
+    async function adicionarFotoUnica(pdf, foto, x, y, maxW, maxH) {
+      const img = await carregarImagem(foto.dataUrl);
+      const proporcao = Math.min(maxW / img.width, maxH / img.height);
+      const w = img.width * proporcao;
+      const h = img.height * proporcao;
+      pdf.setDrawColor(215, 225, 234);
+      pdf.roundedRect(x - 1, y - 1, w + 2, h + 2, 2, 2, 'S');
+      pdf.addImage(foto.dataUrl, obterFormatoImagem(foto.dataUrl), x, y, w, h, undefined, 'FAST');
+      return { w, h };
     }
 
     async function gerarPdfBlob() {
@@ -537,46 +676,56 @@
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margem = 14;
+      const espacoRodape = 18;
       let pagina = 1;
 
       // Capa
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F');
       pdf.setFillColor(15, 76, 129);
-      pdf.rect(0, 0, pageWidth, 55, 'F');
+      pdf.rect(0, 0, pageWidth, 52, 'F');
+      pdf.setFillColor(243, 111, 33);
+      pdf.rect(0, 52, pageWidth, 7, 'F');
+      desenharLogoEnergisa(pdf, 16, 12, 1.15);
+
       pdf.setTextColor(255, 255, 255);
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(24);
-      pdf.text('RELATÓRIO FOTOGRÁFICO', pageWidth / 2, 25, { align: 'center' });
+      pdf.text('RELATÓRIO FOTOGRÁFICO', pageWidth / 2, 31, { align: 'center' });
       pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(11);
-      pdf.text('Documento gerado automaticamente', pageWidth / 2, 34, { align: 'center' });
-
+      pdf.setFontSize(10.5);
+      pdf.text('Documento gerado automaticamente', pageWidth / 2, 40, { align: 'center' });
       pdf.setTextColor(31, 41, 55);
-      pdf.setFillColor(248, 251, 254);
-      pdf.roundedRect(14, 70, pageWidth - 28, 62, 4, 4, 'F');
-      pdf.setDrawColor(215, 225, 234);
-      pdf.roundedRect(14, 70, pageWidth - 28, 62, 4, 4, 'S');
 
+      pdf.setFillColor(248, 251, 254);
+      pdf.roundedRect(14, 72, pageWidth - 28, 60, 4, 4, 'F');
+      pdf.setDrawColor(215, 225, 234);
+      pdf.roundedRect(14, 72, pageWidth - 28, 60, 4, 4, 'S');
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(12);
-      pdf.text('Identificação do responsável', 20, 84);
+      pdf.setTextColor(15, 76, 129);
+      pdf.text('Identificação do responsável', 20, 86);
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(11);
-      pdf.text(`Nome: ${estado.responsavel.nome}`, 20, 97);
-      pdf.text(`Matrícula: ${estado.responsavel.matricula}`, 20, 106);
-      pdf.text(`Cargo: ${estado.responsavel.cargo}`, 20, 115);
-      pdf.text(`Data de emissão: ${new Date().toLocaleString('pt-BR')}`, 20, 124);
+      pdf.setTextColor(31, 41, 55);
+      pdf.text(`Nome: ${estado.responsavel.nome}`, 20, 98);
+      pdf.text(`Matrícula: ${estado.responsavel.matricula}`, 20, 107);
+      pdf.text(`Cargo: ${estado.responsavel.cargo}`, 20, 116);
+      pdf.text(`Data de emissão: ${new Date().toLocaleString('pt-BR')}`, 20, 125);
 
       pdf.setFillColor(248, 251, 254);
-      pdf.roundedRect(14, 145, pageWidth - 28, 45, 4, 4, 'F');
-      pdf.roundedRect(14, 145, pageWidth - 28, 45, 4, 4, 'S');
+      pdf.roundedRect(14, 140, pageWidth - 28, 38, 4, 4, 'F');
+      pdf.roundedRect(14, 140, pageWidth - 28, 38, 4, 4, 'S');
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Resumo do documento', 20, 159);
+      pdf.setTextColor(15, 76, 129);
+      pdf.text('Resumo do documento', 20, 153);
       pdf.setFont('helvetica', 'normal');
-      pdf.text(`Total de componentes: ${estado.componentes.length}`, 20, 172);
-      pdf.text('Cada componente será apresentado em seção própria, com fotos ajustadas à página.', 20, 181);
+      pdf.setTextColor(31, 41, 55);
+      pdf.text(`Total de componentes: ${estado.componentes.length}`, 20, 165);
+      pdf.text('Cada observação será exibida dentro da seção do respectivo componente.', 20, 173);
       adicionarRodapePagina(pdf, pagina);
 
-      // páginas dos componentes
+      // Páginas internas
       for (let i = 0; i < estado.componentes.length; i++) {
         const comp = estado.componentes[i];
         pdf.addPage();
@@ -584,11 +733,9 @@
         adicionarCabecalhoPagina(pdf, 'Relatório Fotográfico', `Componente ${i + 1}`);
         adicionarRodapePagina(pdf, pagina);
 
-        let y = 34;
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(15);
-        pdf.text(`Componente ${i + 1}: ${comp.nome}`, margem, y);
-        y += 8;
+        let y = 32;
+        adicionarSeparadorComponente(pdf, `Componente ${i + 1}: ${comp.nome}`, y, pageWidth);
+        y += 22;
 
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(10);
@@ -597,36 +744,124 @@
         pdf.setTextColor(31, 41, 55);
         y += 8;
 
-        for (let j = 0; j < comp.fotos.length; j++) {
-          const foto = comp.fotos[j];
-          const img = await carregarImagem(foto.dataUrl);
-          const maxW = pageWidth - (margem * 2);
-          const maxH = 105;
-          let w = img.width;
-          let h = img.height;
-          const proporcao = Math.min(maxW / w, maxH / h);
-          w *= proporcao;
-          h *= proporcao;
+        const obsComponente = formatarObservacao(comp.observacao);
+        const linhasObs = quebrarTexto(pdf, obsComponente, pageWidth - 34);
+        const alturaObs = Math.max(18, 10 + (linhasObs.length * 5.2));
 
-          if (y + h + 28 > pageHeight - 18) {
+        if (y + alturaObs > pageHeight - espacoRodape) {
+          pdf.addPage();
+          pagina += 1;
+          adicionarCabecalhoPagina(pdf, 'Relatório Fotográfico', `Componente ${i + 1} (continuação)`);
+          adicionarRodapePagina(pdf, pagina);
+          y = 32;
+        }
+
+        pdf.setFillColor(255, 247, 237);
+        pdf.roundedRect(14, y, pageWidth - 28, alturaObs, 3, 3, 'F');
+        pdf.setDrawColor(254, 215, 170);
+        pdf.roundedRect(14, y, pageWidth - 28, alturaObs, 3, 3, 'S');
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(154, 52, 18);
+        pdf.text('Observações do componente', 20, y + 8);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(31, 41, 55);
+        let yLinhaObs = y + 14;
+        linhasObs.forEach(linha => {
+          pdf.text(linha, 20, yLinhaObs);
+          yLinhaObs += 5.2;
+        });
+        y += alturaObs + 8;
+
+        let idx = 0;
+        while (idx < comp.fotos.length) {
+          const foto = comp.fotos[idx];
+          const imgAtual = await carregarImagem(foto.dataUrl);
+          const ratioAtual = imgAtual.width / imgAtual.height;
+          const proximaExiste = idx + 1 < comp.fotos.length;
+
+          const usarDuasColunas = proximaExiste && ratioAtual >= 0.75;
+
+          if (!usarDuasColunas) {
+            const maxW = pageWidth - (margem * 2);
+            const maxH = 95;
+            const proporcao = Math.min(maxW / imgAtual.width, maxH / imgAtual.height);
+            const hPrevista = imgAtual.height * proporcao;
+            if (y + hPrevista + 18 > pageHeight - espacoRodape) {
+              pdf.addPage();
+              pagina += 1;
+              adicionarCabecalhoPagina(pdf, 'Relatório Fotográfico', `Componente ${i + 1} (continuação)`);
+              adicionarRodapePagina(pdf, pagina);
+              y = 32;
+            }
+
+            const { h } = await adicionarFotoUnica(pdf, foto, margem, y, maxW, maxH);
+            y += h + 7;
+            pdf.setFont('helvetica', 'italic');
+            pdf.setFontSize(9);
+            pdf.setTextColor(71, 85, 105);
+            pdf.text(`Foto ${idx + 1}${foto.nome ? ` - ${foto.nome}` : ''}`, margem, y);
+            pdf.setTextColor(31, 41, 55);
+            y += 10;
+            idx += 1;
+            continue;
+          }
+
+          const foto2 = comp.fotos[idx + 1];
+          const img2 = await carregarImagem(foto2.dataUrl);
+          const ratio2 = img2.width / img2.height;
+
+          if (ratio2 < 0.75) {
+            const maxW = pageWidth - (margem * 2);
+            const maxH = 95;
+            const proporcao = Math.min(maxW / imgAtual.width, maxH / imgAtual.height);
+            const hPrevista = imgAtual.height * proporcao;
+            if (y + hPrevista + 18 > pageHeight - espacoRodape) {
+              pdf.addPage();
+              pagina += 1;
+              adicionarCabecalhoPagina(pdf, 'Relatório Fotográfico', `Componente ${i + 1} (continuação)`);
+              adicionarRodapePagina(pdf, pagina);
+              y = 32;
+            }
+            const { h } = await adicionarFotoUnica(pdf, foto, margem, y, maxW, maxH);
+            y += h + 7;
+            pdf.setFont('helvetica', 'italic');
+            pdf.setFontSize(9);
+            pdf.setTextColor(71, 85, 105);
+            pdf.text(`Foto ${idx + 1}${foto.nome ? ` - ${foto.nome}` : ''}`, margem, y);
+            pdf.setTextColor(31, 41, 55);
+            y += 10;
+            idx += 1;
+            continue;
+          }
+
+          const gap = 8;
+          const cellW = (pageWidth - (margem * 2) - gap) / 2;
+          const cellH = 70;
+          const h1 = imgAtual.height * Math.min(cellW / imgAtual.width, cellH / imgAtual.height);
+          const h2 = img2.height * Math.min(cellW / img2.width, cellH / img2.height);
+          const rowHeight = Math.max(h1, h2);
+
+          if (y + rowHeight + 18 > pageHeight - espacoRodape) {
             pdf.addPage();
             pagina += 1;
             adicionarCabecalhoPagina(pdf, 'Relatório Fotográfico', `Componente ${i + 1} (continuação)`);
             adicionarRodapePagina(pdf, pagina);
-            y = 34;
+            y = 32;
           }
 
-          pdf.setDrawColor(215, 225, 234);
-          pdf.roundedRect(margem - 1, y - 1, w + 2, h + 2, 3, 3, 'S');
-          pdf.addImage(foto.dataUrl, obterFormatoImagem(foto.dataUrl), margem, y, w, h, undefined, 'FAST');
-          y += h + 7;
+          const pos1 = await adicionarFotoUnica(pdf, foto, margem, y, cellW, cellH);
+          const pos2 = await adicionarFotoUnica(pdf, foto2, margem + cellW + gap, y, cellW, cellH);
+          const linhaLegY = y + Math.max(pos1.h, pos2.h) + 6;
 
           pdf.setFont('helvetica', 'italic');
-          pdf.setFontSize(9);
+          pdf.setFontSize(8.5);
           pdf.setTextColor(71, 85, 105);
-          pdf.text(`Foto ${j + 1}${foto.nome ? ` - ${foto.nome}` : ''}`, margem, y);
+          pdf.text(`Foto ${idx + 1}${foto.nome ? ` - ${foto.nome}` : ''}`, margem, linhaLegY);
+          pdf.text(`Foto ${idx + 2}${foto2.nome ? ` - ${foto2.nome}` : ''}`, margem + cellW + gap, linhaLegY);
           pdf.setTextColor(31, 41, 55);
-          y += 8;
+
+          y = linhaLegY + 10;
+          idx += 2;
         }
       }
 
