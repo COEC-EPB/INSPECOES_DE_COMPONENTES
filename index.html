@@ -428,28 +428,97 @@
   inputGaleria.addEventListener('change', (e) => carregarArquivos(e.target.files));
 
   function arquivoParaDataURL(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  async function carregarArquivos(fileList) {
-    const files = Array.from(fileList || []).filter(f => f.type.startsWith('image/'));
-
-    for (const file of files) {
-      const dataUrl = await arquivoParaDataURL(file);
-      estado.fotosTemp.push({
-        nome: file.name,
-        tipo: file.type,
-        dataUrl
-      });
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) {
+      reject(new Error('Arquivo não é imagem.'));
+      return;
     }
 
-    renderizarPreview();
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const img = new Image();
+
+      img.onload = () => {
+        try {
+          const maxLargura = 1800;
+          const maxAltura = 1800;
+
+          let { width, height } = img;
+
+          if (width > maxLargura || height > maxAltura) {
+            const escala = Math.min(maxLargura / width, maxAltura / height);
+            width = Math.round(width * escala);
+            height = Math.round(height * escala);
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+
+          resolve(jpegDataUrl);
+        } catch (err) {
+          reject(err);
+        }
+      };
+
+      img.onerror = () => {
+        reject(new Error('Não foi possível carregar a imagem.'));
+      };
+
+      img.src = reader.result;
+    };
+
+    reader.onerror = () => reject(new Error('Falha ao ler o arquivo.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+  async function carregarArquivos(fileList) {
+  const files = Array.from(fileList || []).filter(f => f.type.startsWith('image/'));
+
+  if (!files.length) {
+    mostrarStatus('Nenhuma imagem válida foi selecionada.', 'erro');
+    return;
   }
+
+  let adicionadas = 0;
+  let falhas = 0;
+
+  for (const file of files) {
+    try {
+      const dataUrl = await arquivoParaDataURL(file);
+
+      estado.fotosTemp.push({
+        nome: (file.name || 'foto').replace(/\.(heic|heif|png|webp)$/i, '.jpg'),
+        tipo: 'image/jpeg',
+        dataUrl
+      });
+
+      adicionadas++;
+    } catch (erro) {
+      console.error('Erro ao processar imagem:', file.name, erro);
+      falhas++;
+    }
+  }
+
+  renderizarPreview();
+
+  if (adicionadas && !falhas) {
+    mostrarStatus(`${adicionadas} foto(s) carregada(s) com sucesso.`, 'ok');
+  } else if (adicionadas && falhas) {
+    mostrarStatus(`${adicionadas} foto(s) carregada(s), mas ${falhas} falhou/aram.`, 'erro');
+  } else {
+    mostrarStatus('Nenhuma foto pôde ser carregada. Verifique se o formato é compatível.', 'erro');
+  }
+}
 
   function renderizarPreview() {
     previewFotos.innerHTML = '';
